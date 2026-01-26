@@ -163,7 +163,7 @@ export default function KetuaProkerView({ data }: { data: ProkerItem[] }) {
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                       <div className="flex items-center gap-1.5">
                         <User size={14} />
-                        <span className="truncate max-w-37.5">
+                        <span className="truncate max-w-[150px]">
                           {proker.picName}
                         </span>
                       </div>

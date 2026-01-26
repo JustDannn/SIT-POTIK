@@ -109,6 +109,7 @@ export const activityLogs = pgTable("activity_logs", {
     .notNull(),
   logDate: timestamp("log_date").defaultNow(),
   notes: text("notes").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const minutes = pgTable("minutes", {
@@ -235,3 +236,25 @@ export const reportApprovalsRelations = relations(
     }),
   }),
 );
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  proker: one(prokers, {
+    fields: [tasks.prokerId],
+    references: [prokers.id],
+  }),
+  assignedUser: one(users, {
+    fields: [tasks.assignedUserId],
+    references: [users.id],
+  }),
+}));
+
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  proker: one(prokers, {
+    fields: [activityLogs.prokerId],
+    references: [prokers.id],
+  }),
+  user: one(users, {
+    fields: [activityLogs.createdBy],
+    references: [users.id],
+  }),
+}));

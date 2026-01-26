@@ -43,7 +43,7 @@ export async function getProkerDetail(prokerId: number) {
           assignedUser: true, // Biar tau task ini tugas siapa
         },
       },
-      activityLogs: {
+      logs: {
         orderBy: [desc(activityLogs.createdAt)],
         with: {
           user: true, // Biar tau siapa yang nulis log

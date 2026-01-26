@@ -29,8 +29,12 @@ export default async function ProkerPage() {
   // 3. Logic Switch View
   // Kalau Ketua, kita kasih data semua proker
   if (roleName === "Ketua") {
-    const prokers = await getAllProkers();
-    return <KetuaProkerView data={prokers} />;
+    const prokersData = await getAllProkers();
+    const prokers = prokersData.map((p) => ({
+      ...p,
+      status: p.status ?? "created",
+    }));
+    return <KetuaProkerView data={prokers as any} />;
   }
 
   // TODO: Nanti buat view untuk Anggota/Koordinator di sini
