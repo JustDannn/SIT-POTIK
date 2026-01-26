@@ -36,7 +36,7 @@ export default async function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
+    <div className="flex h-screen w-full overflow-hidden bg-gray-50">
       {/* Sidebar Otomatis Menyesuaikan Role */}
       <Sidebar user={userData} />
 

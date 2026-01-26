@@ -1,12 +1,16 @@
-import { 
-  LayoutDashboard, 
-  BarChart3, 
-  FileText, 
-  PenTool, 
-  Building2, 
-  Users, 
+import {
+  LayoutDashboard,
+  BarChart3,
+  FileText,
+  PenTool,
+  Building2,
+  Users,
   Wallet,
-  ScrollText
+  ScrollText,
+  CheckCircle,
+  Archive,
+  History,
+  AlertCircle,
 } from "lucide-react";
 
 export type MenuItem = {
@@ -15,43 +19,79 @@ export type MenuItem = {
   icon: any;
 };
 
+// Mapping Role ke Menu sesuai Deskripsi User
 export const ROLE_MENUS: Record<string, MenuItem[]> = {
-  // Flow Ketua: Overview, Review Laporan, Review Konten
-  Ketua: [
-    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { title: "Monitoring Proker", href: "/dashboard/proker", icon: BarChart3 },
-    { title: "Approval Laporan", href: "/dashboard/approval/reports", icon: FileText },
-    { title: "Approval Konten", href: "/dashboard/approval/content", icon: PenTool },
-    { title: "Ringkasan Organisasi", href: "/dashboard/overview", icon: Building2 },
-  ],
-
-  // Flow Anggota: Proker, Task, Log
+  // 1. ANGGOTA (Eksekutor)
   Anggota: [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { title: "Proker Saya", href: "/dashboard/proker", icon: BarChart3 },
-    { title: "Tugas (Tasks)", href: "/dashboard/tasks", icon: FileText },
+    { title: "Task Saya", href: "/dashboard/tasks", icon: CheckCircle },
+    { title: "Log Aktivitas", href: "/dashboard/logs", icon: History },
   ],
 
-  // Flow Koordinator: Manage Proker, Task, Upload Report
+  // 2. KOORDINATOR (Manajer Divisi)
   Koordinator: [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { title: "Manajemen Proker", href: "/dashboard/proker/manage", icon: BarChart3 },
-    { title: "Manajemen Task", href: "/dashboard/tasks/manage", icon: FileText },
-    { title: "Upload Laporan", href: "/dashboard/reports/upload", icon: ScrollText },
-    { title: "Submit Konten", href: "/dashboard/content/submit", icon: PenTool },
+    { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 }, // Manage Proker
+    {
+      title: "Task Management",
+      href: "/dashboard/tasks/manage",
+      icon: CheckCircle,
+    },
+    { title: "Log Aktivitas", href: "/dashboard/logs", icon: History },
+    { title: "Laporan", href: "/dashboard/reports", icon: FileText },
+    { title: "Konten", href: "/dashboard/content", icon: PenTool }, // Opsional
   ],
 
-  // Flow Sekretaris: Notulensi, Arsip
+  // 3. KETUA (Decision Maker)
+  Ketua: [
+    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 }, // View All
+    {
+      title: "Laporan & Approval",
+      href: "/dashboard/approvals",
+      icon: AlertCircle,
+    },
+    {
+      title: "Konten Publikasi",
+      href: "/dashboard/content/review",
+      icon: PenTool,
+    },
+    { title: "Ringkasan Org", href: "/dashboard/overview", icon: Building2 },
+  ],
+
+  // 4. SEKRETARIS (Admin & Arsip)
   Sekretaris: [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { title: "Notulensi Rapat", href: "/dashboard/minutes", icon: FileText },
-    { title: "Arsip Dokumen", href: "/dashboard/archives", icon: Building2 },
+    { title: "Notulensi", href: "/dashboard/minutes", icon: FileText },
+    { title: "Arsip Dokumen", href: "/dashboard/archives", icon: Archive },
+    { title: "Laporan", href: "/dashboard/reports", icon: ScrollText }, // Opsional
   ],
 
-  // Flow Bendahara: Keuangan, LPJ
+  // 5. BENDAHARA (Finance)
   Bendahara: [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { title: "Keuangan & Anggaran", href: "/dashboard/finance", icon: Wallet },
+    {
+      title: "Keuangan Proker",
+      href: "/dashboard/finance/proker",
+      icon: Wallet,
+    },
+    {
+      title: "Keuangan Umum",
+      href: "/dashboard/finance/general",
+      icon: Building2,
+    },
     { title: "LPJ", href: "/dashboard/lpj", icon: ScrollText },
+  ],
+
+  // 6. DOSEN (Overseer)
+  Dosen: [
+    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 }, // View Only
+    {
+      title: "Laporan (Approval)",
+      href: "/dashboard/approvals",
+      icon: CheckCircle,
+    },
   ],
 };
