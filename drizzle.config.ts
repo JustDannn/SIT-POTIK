@@ -12,7 +12,8 @@ dns.lookup = (hostname, options, callback) => {
     callback = options;
     options = {};
   }
-  options = { ...options, family: 4 };
+  options = { ...(typeof options === "object" ? options : {}), family: 4 };
+  // @ts-ignore
   return originalLookup(hostname, options, callback);
 };
 
@@ -21,7 +22,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
+  schema: "./db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
