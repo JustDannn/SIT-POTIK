@@ -1,9 +1,12 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users, roles } from "@/db/schema";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 
-export async function register(formData: FormData) {
+export async function signUp(formData: FormData) {
   const supabase = await createClient();
 
   const fullName = formData.get("fullName") as string;
@@ -11,33 +14,49 @@ export async function register(formData: FormData) {
   const password = formData.get("password") as string;
   const token = formData.get("token") as string;
 
-  // 1. Validasi Token (Hardcode di env dulu)
   if (token !== process.env.REGISTRATION_TOKEN) {
-    // Balikin error (Idealnya pake state, tp redirect error dulu gpp)
     return redirect("/login/register?error=invalid_token");
   }
 
-  // 2. Validasi Domain Email (Opsional)
   if (!email.endsWith("@student.telkomuniversity.ac.id")) {
     return redirect("/login/register?error=invalid_domain");
   }
-
-  // 3. Create User di Supabase Auth
-  const { error } = await supabase.auth.signUp({
+  const defaultRole = await db.query.roles.findFirst({
+    where: eq(roles.roleName, "Anggota"),
+  });
+  if (!defaultRole) {
+    console.error("Role 'Anggota' tidak ditemukan di database!");
+    return redirect("/login/register?error=system_error_no_role");
+  }
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        full_name: fullName, // Ini bakal dibaca sama Trigger SQL tadi
-      },
+      data: { full_name: fullName },
     },
   });
 
   if (error) {
-    console.error(error);
+    console.error("Auth Error:", error);
     return redirect("/login/register?error=signup_failed");
   }
 
-  // Sukses
+  if (!data.user) {
+    return redirect("/login/register?error=no_user_created");
+  }
+  try {
+    await db.insert(users).values({
+      id: data.user.id,
+      name: fullName,
+      email: email,
+      status: "active",
+      roleId: defaultRole.id,
+    });
+  } catch (dbError) {
+    console.error("DB Insert Error:", dbError);
+    return redirect("/login/register?error=db_error");
+  }
+
+  // Sukses!
   redirect("/dashboard?welcome=true");
 }

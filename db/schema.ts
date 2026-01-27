@@ -26,6 +26,7 @@ export const reportStatusEnum = pgEnum("report_status", [
   "draft",
   "submitted",
   "approved",
+  "rejected",
 ]);
 export const contentTypeEnum = pgEnum("content_type", [
   "artikel",
@@ -66,6 +67,7 @@ export const users = pgTable("users", {
     .notNull(),
   divisionId: integer("division_id").references(() => divisions.id), // Nullable untuk Ketua/Dosen
   createdAt: timestamp("created_at").defaultNow(),
+  status: text("status").default("active"),
 });
 
 export const prokers = pgTable("prokers", {
@@ -136,6 +138,9 @@ export const reports = pgTable("reports", {
   filePath: text("file_path").notNull(),
   status: reportStatusEnum("status").default("draft"),
   createdAt: timestamp("created_at").defaultNow(),
+  title: text("title"),
+  type: text("type"),
+  notes: text("notes"),
 });
 
 export const reportApprovals = pgTable("report_approvals", {
@@ -187,6 +192,25 @@ export const contents = pgTable("contents", {
   publishedAt: timestamp("published_at"),
 });
 
+export const contentPlans = pgTable("content_plans", {
+  id: serial("content_id").primaryKey(),
+  title: text("title").notNull(),
+  channel: text("channel").notNull(), // 'ig_feed', 'ig_story', 'tiktok'
+  status: text("status").default("idea"), // 'idea', 'process', 'ready', 'published'
+  scheduledDate: timestamp("scheduled_date"),
+  caption: text("caption"),
+  assetUrl: text("asset_url"),
+  picId: uuid("pic_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contentPlansRelations = relations(contentPlans, ({ one }) => ({
+  pic: one(users, {
+    fields: [contentPlans.picId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ one, many }) => ({
   role: one(roles, {
     fields: [users.roleId],
@@ -215,12 +239,15 @@ export const prokersRelations = relations(prokers, ({ one, many }) => ({
   financeRecords: many(financeRecords),
 }));
 
-export const reportsRelations = relations(reports, ({ one, many }) => ({
+export const reportsRelations = relations(reports, ({ one }) => ({
   proker: one(prokers, {
     fields: [reports.prokerId],
     references: [prokers.id],
   }),
-  approvals: many(reportApprovals),
+  uploader: one(users, {
+    fields: [reports.uploadedBy],
+    references: [users.id],
+  }),
 }));
 
 export const reportApprovalsRelations = relations(

@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { ROLE_MENUS, MenuItem } from "@/config/menu";
 import { LogOut, Search, ChevronLeft, ChevronRight, Sun } from "lucide-react";
 import Image from "next/image";
-
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 // Import DiceBear
 import { createAvatar } from "@dicebear/core";
 import { dylan } from "@dicebear/collection";
@@ -22,6 +23,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ user }: SidebarProps) {
+  const router = useRouter();
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  };
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
 
@@ -126,6 +135,7 @@ export default function Sidebar({ user }: SidebarProps) {
       {/* 4. Footer (Logout & Theme) */}
       <div className="border-t border-gray-200 p-4 space-y-2">
         <button
+          onClick={handleLogout}
           className={cn(
             "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors",
             isCollapsed && "justify-center px-2",

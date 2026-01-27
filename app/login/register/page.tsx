@@ -3,7 +3,7 @@
 import React from "react";
 import { useFormStatus } from "react-dom";
 import { motion } from "framer-motion";
-import { register } from "./actions";
+import { signUp } from "./actions";
 import { Lock, Mail, User, KeyRound, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Background from "@/components/Background";
@@ -71,7 +71,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Form dengan GRID 2 KOLOM */}
-          <form action={register}>
+          <form action={signUp}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* Kolom Kiri */}
               <div className="space-y-4">

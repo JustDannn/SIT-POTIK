@@ -49,12 +49,12 @@ export const ROLE_MENUS: Record<string, MenuItem[]> = {
     { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 }, // View All
     {
       title: "Laporan & Approval",
-      href: "/dashboard/approvals",
+      href: "/dashboard/approval",
       icon: AlertCircle,
     },
     {
       title: "Konten Publikasi",
-      href: "/dashboard/content/review",
+      href: "/dashboard/content",
       icon: PenTool,
     },
     { title: "Ringkasan Org", href: "/dashboard/overview", icon: Building2 },
