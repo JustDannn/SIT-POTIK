@@ -9,10 +9,7 @@ export default async function PublicPublicationsPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Spacer karena Navbar lu fixed */}
       <div className="h-20" />
-
-      {/* 2. Main Content */}
       <main>
         <PublicationFeed initialData={data} />
       </main>

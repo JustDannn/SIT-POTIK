@@ -6,7 +6,6 @@ import { desc, asc } from "drizzle-orm";
 
 export async function getContentList() {
   const data = await db.query.contentPlans.findMany({
-    // Urutkan: Yang akan tayang duluan di atas, baru yang udah lewat
     orderBy: [desc(contentPlans.scheduledDate)],
     with: {
       pic: true,

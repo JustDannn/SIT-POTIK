@@ -10,7 +10,7 @@ import {
   Filter,
   File,
 } from "lucide-react";
-import { DeleteButton } from "./_components/DeleteButton"; // Kita bikin tombol delete terpisah
+import { DeleteButton } from "./_components/DeleteButton";
 
 export default async function ArchivesPage({
   searchParams,
@@ -110,7 +110,7 @@ export default async function ArchivesPage({
                       <p className="font-bold text-gray-900 line-clamp-1">
                         {item.title}
                       </p>
-                      <p className="text-xs text-gray-500 line-clamp-1 max-w-[200px]">
+                      <p className="text-xs text-gray-500 line-clamp-1 max-w-50">
                         {item.description || "Tidak ada deskripsi"}
                       </p>
                     </div>

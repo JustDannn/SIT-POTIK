@@ -13,7 +13,6 @@ import {
 import { approveDocument, rejectDocument } from "../actions"; // Import server actions
 import { cn } from "@/lib/utils";
 
-// Helper UI Badge
 const getTypeBadge = (type: string) => {
   switch (type) {
     case "proposal":
@@ -26,7 +25,7 @@ const getTypeBadge = (type: string) => {
 };
 
 export default function KetuaApprovalView({ data }: { data: any[] }) {
-  const [activeTab, setActiveTab] = useState("pending"); // 'pending' | 'history'
+  const [activeTab, setActiveTab] = useState("pending");
   const [isProcessing, setIsProcessing] = useState<number | null>(null);
 
   // Filter Data Client-Side
@@ -35,7 +34,6 @@ export default function KetuaApprovalView({ data }: { data: any[] }) {
 
   const displayData = activeTab === "pending" ? pendingItems : historyItems;
 
-  // Handler Aksi
   const handleApprove = async (id: number) => {
     if (!confirm("Yakin ingin menyetujui dokumen ini?")) return;
     setIsProcessing(id);
@@ -150,7 +148,7 @@ export default function KetuaApprovalView({ data }: { data: any[] }) {
                 </div>
               </div>
 
-              {/* Kanan: Action Buttons (Cuma muncul kalau status pending) */}
+              {/* Action Buttons (Cuma muncul kalau status pending) */}
               {item.status === "pending" ? (
                 <div className="flex gap-2 shrink-0">
                   <button

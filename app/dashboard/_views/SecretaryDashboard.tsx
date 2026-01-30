@@ -20,7 +20,6 @@ export default function SecretaryDashboard({
   data: any;
   user: any;
 }) {
-  // Greeting berdasarkan waktu
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Selamat Pagi" : hour < 18 ? "Selamat Siang" : "Selamat Malam";
@@ -31,7 +30,7 @@ export default function SecretaryDashboard({
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {greeting}, {user.name.split(" ")[0]}! 👋
+            {greeting}, {user.name.split(" ")[0]}!
           </h1>
           <p className="text-gray-500 text-sm">
             Berikut ringkasan administrasi Pojok Statistik hari ini.
@@ -55,7 +54,7 @@ export default function SecretaryDashboard({
 
       {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card 1: Notulensi */}
+        {/* Notulensi */}
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-orange-200 transition-all">
           <div>
             <p className="text-gray-500 text-sm font-medium mb-1">
@@ -69,7 +68,7 @@ export default function SecretaryDashboard({
             <FileText size={24} />
           </div>
         </div>
-        {/* Card 2: Arsip */}
+        {/* Arsip */}
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-orange-200 transition-all">
           <div>
             <p className="text-gray-500 text-sm font-medium mb-1">
@@ -83,7 +82,7 @@ export default function SecretaryDashboard({
             <Archive size={24} />
           </div>
         </div>
-        {/* Card 3: Date (Placeholder / Agenda) */}
+        {/* Date (Placeholder / Agenda) */}
         <div className="bg-linear-to-br from-orange-500 to-orange-600 p-6 rounded-2xl shadow-lg text-white">
           <div className="flex items-start justify-between">
             <div>
@@ -125,7 +124,7 @@ export default function SecretaryDashboard({
                 key={m.id}
                 className="flex gap-4 items-start pb-4 border-b border-gray-50 last:border-0 last:pb-0"
               >
-                <div className="min-w-[50px] text-center bg-gray-50 rounded-lg p-2">
+                <div className="min-w-12.5 text-center bg-gray-50 rounded-lg p-2">
                   <span className="block text-xs text-gray-500 uppercase">
                     {new Date(m.meetingDate).toLocaleString("id-ID", {
                       month: "short",

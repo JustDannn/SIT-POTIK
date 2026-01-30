@@ -8,8 +8,6 @@ import KetuaContentView from "./_views/KetuaContentView";
 
 export default async function ContentPage() {
   const supabase = await createClient();
-
-  // 1. Auth & Role Check
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
@@ -23,10 +21,8 @@ export default async function ContentPage() {
 
   const roleName = userProfile.role.roleName;
 
-  // 2. Fetch Data
   const contentData = await getContentList();
 
-  // 3. Render View
   if (roleName === "Ketua") {
     return <KetuaContentView data={contentData} />;
   }

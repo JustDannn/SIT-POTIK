@@ -14,7 +14,7 @@ export function DeleteButton({ id, fileUrl }: { id: number; fileUrl: string }) {
       setLoading(true);
       await deleteArchive(id, fileUrl);
       setLoading(false);
-      router.refresh(); // Refresh halaman biar data ilang
+      router.refresh();
     }
   };
 

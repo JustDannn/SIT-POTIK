@@ -57,7 +57,6 @@ export default async function PublicationDetailPage({
 
       <div className="h-24" />
 
-      {/* Container GEDE (max-w-7xl) biar lega */}
       <main className="relative z-10 max-w-7xl mx-auto px-6 pb-20">
         {/* BACK BUTTON */}
         <div className="mb-6">
@@ -71,9 +70,9 @@ export default async function PublicationDetailPage({
 
         {/* --- GLASS CONTENT CARD --- */}
         <article className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-4xl overflow-hidden shadow-xl shadow-gray-200/50">
-          {/* HERO SECTION: GRID LAYOUT (Kiri Teks, Kanan Gambar) */}
+          {/* HERO SECTION: GRID LAYOUT*/}
           <div className="grid grid-cols-1 lg:grid-cols-12 border-b border-gray-100">
-            {/* KOLOM KIRI: Header Info (5 Kolom) */}
+            {/* KOLOM KIRI: Header Info */}
             <div className="lg:col-span-5 p-8 md:p-12 flex flex-col justify-center bg-linear-to-br from-white/50 to-transparent">
               <div>
                 {/* Category Badge */}
@@ -127,9 +126,9 @@ export default async function PublicationDetailPage({
               </div>
             </div>
 
-            {/* KOLOM KANAN: Gambar (7 Kolom) */}
+            {/* KOLOM KANAN: Gambar*/}
             <div className="lg:col-span-7 bg-gray-100 relative min-h-75 lg:min-h-125 border-l border-white/50">
-              {/* Kita panggil component Viewer di sini */}
+              {/* component Viewer */}
               <PublicationImageViewer
                 src={data.thumbnailUrl}
                 alt={data.title}

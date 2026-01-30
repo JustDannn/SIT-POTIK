@@ -63,15 +63,15 @@ export default function KetuaView({
         />
       </div>
 
-      {/* --- MAIN CONTENT GRID --- */}
+      {/* MAIN CONTENT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* KOLOM KIRI (2/3 Lebar): Timeline & Aktivitas */}
+        {/* Timeline & Aktivitas */}
         <div className="lg:col-span-2 space-y-6">
           {/* Widget Timeline (Sekarang nerima data prop) */}
           <TimelineWidget {...({ data: timeline } as any)} />
 
           {/* Widget Aktivitas (Placeholder) */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-h-[200px]">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-h-50">
             <h3 className="font-bold text-gray-800 mb-4">
               Aktivitas Organisasi Terbaru
             </h3>
@@ -81,9 +81,9 @@ export default function KetuaView({
           </div>
         </div>
 
-        {/* KOLOM KANAN (1/3 Lebar): Attention Needed */}
+        {/* Attention Needed */}
         <div className="lg:col-span-1">
-          {/* Widget Attention (Data Real dari DB) */}
+          {/* Widget Attention */}
           <AttentionWidget items={attention} />
         </div>
       </div>

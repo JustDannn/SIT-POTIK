@@ -7,7 +7,8 @@ import { redirect } from "next/navigation";
 // --- IMPORT VIEWS ---
 import KetuaView from "./_views/KetuaView";
 import SecretaryDashboard from "./_views/SecretaryDashboard";
-import KoordinatorRisetView from "./_views/KoordinatorRisetView"; // 👈 View baru
+import KoordinatorRisetView from "./_views/KoordinatorRisetView";
+import TreasurerDashboard from "./_views/TreasurerDashboard";
 // import AnggotaView from "./_views/AnggotaView";
 
 // --- IMPORT ACTIONS ---
@@ -17,6 +18,7 @@ import {
   getAttentionItems,
   getRisetStats,
   getSecretaryDashboardData,
+  getTreasurerDashboardData,
 } from "./actions";
 
 export default async function DashboardPage() {
@@ -97,6 +99,10 @@ export default async function DashboardPage() {
   if (roleName === "Sekretaris") {
     const dashboardData = await getSecretaryDashboardData();
     return <SecretaryDashboard data={dashboardData} user={userProfile} />;
+  }
+  if (roleName === "Bendahara") {
+    const dashboardData = await getTreasurerDashboardData();
+    return <TreasurerDashboard data={dashboardData} user={userProfile} />;
   }
   // ============================================================
   // 5. LOGIC ANGGOTA / LAINNYA

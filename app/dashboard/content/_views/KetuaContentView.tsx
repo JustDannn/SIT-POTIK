@@ -12,8 +12,6 @@ import {
   Loader,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Helper Icon Channel
 const getChannelIcon = (channel: string) => {
   if (channel.includes("ig"))
     return <Instagram size={16} className="text-pink-600" />;
@@ -22,7 +20,6 @@ const getChannelIcon = (channel: string) => {
   return <ImageIcon size={16} className="text-gray-600" />;
 };
 
-// Helper Status Badge
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "published":
@@ -37,7 +34,6 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function KetuaContentView({ data }: { data: any[] }) {
-  // Pisahin Upcoming vs Published biar rapi
   const now = new Date();
   const upcoming = data.filter(
     (d) => new Date(d.date) > now || d.status !== "published",
@@ -61,7 +57,7 @@ export default function KetuaContentView({ data }: { data: any[] }) {
         </button>
       </div>
 
-      {/* SECTION 1: UPCOMING (Fokus Utama) */}
+      {/*UPCOMING*/}
       <div>
         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <Clock size={20} className="text-orange-500" /> Akan Tayang / Dalam
@@ -136,7 +132,7 @@ export default function KetuaContentView({ data }: { data: any[] }) {
         </div>
       </div>
 
-      {/* SECTION 2: RECENTLY PUBLISHED */}
+      {/* RECENTLY PUBLISHED */}
       <div>
         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <CheckCircle size={20} className="text-green-500" /> Baru Saja Tayang

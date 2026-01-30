@@ -8,7 +8,7 @@ export default function Home() {
       {/* Hero Section Dummy */}
       <section className="h-screen bg-gray-50 flex items-center justify-center">
         <h1 className="text-4xl font-bold">
-          Scroll ke bawah untuk lihat magic-nya! 👇
+          Scroll ke bawah untuk lihat magic-nya!
         </h1>
       </section>
       {/* Konten Panjang Dummy */}

@@ -31,10 +31,9 @@ export default function PublicationFeed({
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12">
-      {/* 1. HEADER & CONTROLS */}
+      {/* HEADER & CONTROLS */}
       <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
         <div className="relative">
-          {/* Hiasan Judul */}
           <div className="absolute -left-6 top-1 w-1 h-12 bg-orange-500 rounded-full"></div>
           <h1 className="text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
             Research <span className="text-orange-600">&</span> Insights
@@ -84,7 +83,7 @@ export default function PublicationFeed({
         </div>
       </div>
 
-      {/* 2. GLASS CONTENT GRID */}
+      {/* GLASS CONTENT GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <AnimatePresence mode="popLayout">
           {filteredData.map((item) => (
@@ -97,11 +96,11 @@ export default function PublicationFeed({
               key={item.id}
               className="group relative flex flex-col h-full"
             >
-              {/* Card Container (The Glass) */}
+              {/* Card Container */}
               <div className="h-full bg-white/60 backdrop-blur-md border border-white/50 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-500 hover:-translate-y-2">
                 {/* Image Section */}
                 <div className="h-56 relative overflow-hidden">
-                  {/* Gradient Overlay saat hover */}
+                  {/* Gradient Overlay hover */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10 duration-500"></div>
 
                   {item.thumbnailUrl ? (
@@ -111,7 +110,7 @@ export default function PublicationFeed({
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                    <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
                       {item.category === "Infografis" ? (
                         <ImageIcon size={48} className="text-gray-400/50" />
                       ) : (
@@ -120,7 +119,7 @@ export default function PublicationFeed({
                     </div>
                   )}
 
-                  {/* Floating Badge */}
+                  {/* Badge */}
                   <div className="absolute top-4 left-4 z-20">
                     <span
                       className={cn(

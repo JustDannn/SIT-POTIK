@@ -197,7 +197,11 @@ export const lpjs = pgTable("lpjs", {
     .notNull(),
   filePath: text("file_path").notNull(),
   status: reportStatusEnum("status").default("draft"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const contents = pgTable("contents", {
@@ -296,6 +300,7 @@ export const prokersRelations = relations(prokers, ({ one, many }) => ({
   logs: many(activityLogs),
   reports: many(reports),
   financeRecords: many(financeRecords),
+  lpjs: many(lpjs),
 }));
 
 export const reportsRelations = relations(reports, ({ one }) => ({
@@ -341,6 +346,28 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
   user: one(users, {
     fields: [activityLogs.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const financeRecordsRelations = relations(financeRecords, ({ one }) => ({
+  proker: one(prokers, {
+    fields: [financeRecords.prokerId],
+    references: [prokers.id],
+  }),
+  recorder: one(users, {
+    fields: [financeRecords.recordedBy],
+    references: [users.id],
+  }),
+}));
+
+export const lpjsRelations = relations(lpjs, ({ one }) => ({
+  proker: one(prokers, {
+    fields: [lpjs.prokerId],
+    references: [prokers.id],
+  }),
+  uploader: one(users, {
+    fields: [lpjs.uploadedBy],
     references: [users.id],
   }),
 }));

@@ -8,6 +8,8 @@ import {
   publications,
   minutes,
   archives,
+  financeRecords,
+  lpjs,
 } from "@/db/schema";
 import { eq, sql, desc, and, ne, count } from "drizzle-orm";
 
@@ -161,5 +163,65 @@ export async function getSecretaryDashboardData() {
     },
     recentMinutes,
     recentArchives,
+  };
+}
+export async function getTreasurerDashboardData() {
+  // 1. HITUNG DUIT (Income vs Expense)
+  // Kita ambil semua record
+  const allRecords = await db
+    .select({
+      amount: financeRecords.amount,
+      type: financeRecords.type,
+    })
+    .from(financeRecords);
+
+  // Hitung manual di JS (biar gampang) atau pake SQL Sum
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  allRecords.forEach((r) => {
+    if (r.type === "income") totalIncome += Number(r.amount);
+    else totalExpense += Number(r.amount);
+  });
+
+  const currentBalance = totalIncome - totalExpense;
+
+  // 2. Transaksi Terakhir (5 biji)
+  const recentTransactions = await db
+    .select({
+      id: financeRecords.id,
+      amount: financeRecords.amount,
+      type: financeRecords.type,
+      description: financeRecords.description,
+      date: financeRecords.date,
+      prokerTitle: prokers.title, // Join buat tau ini duit proker apa
+    })
+    .from(financeRecords)
+    .leftJoin(prokers, eq(financeRecords.prokerId, prokers.id))
+    .orderBy(desc(financeRecords.date))
+    .limit(5);
+
+  // 3. LPJ Pending (Yang butuh review)
+  // LPJ yang statusnya 'submitted' (sudah diajukan divisi, belum di-acc bendahara)
+  const pendingLpjs = await db
+    .select({
+      id: lpjs.id,
+      status: lpjs.status,
+      prokerTitle: prokers.title,
+      createdAt: lpjs.createdAt,
+    })
+    .from(lpjs)
+    .leftJoin(prokers, eq(lpjs.prokerId, prokers.id))
+    .where(eq(lpjs.status, "submitted"))
+    .limit(5);
+
+  return {
+    finance: {
+      balance: currentBalance,
+      income: totalIncome,
+      expense: totalExpense,
+    },
+    recentTransactions,
+    pendingLpjs,
   };
 }

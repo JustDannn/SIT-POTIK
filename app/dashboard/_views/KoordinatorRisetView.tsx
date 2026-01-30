@@ -19,11 +19,11 @@ export default function KoordinatorRisetView({ user, data }: { user: any, data: 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {/* 1. WELCOME HEADER */}
+      {/* WELCOME HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Halo, {user.name} 👋
+            Halo, {user.name}
           </h1>
           <p className="text-gray-500 text-sm">
             Koordinator Divisi <span className="font-semibold text-orange-600">{user.division.divisionName}</span>
@@ -41,7 +41,7 @@ export default function KoordinatorRisetView({ user, data }: { user: any, data: 
         </div>
       </div>
 
-      {/* 2. STATS CARDS */}
+      {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card Artikel */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4 hover:border-blue-300 transition-colors">
@@ -77,7 +77,7 @@ export default function KoordinatorRisetView({ user, data }: { user: any, data: 
         </div>
       </div>
 
-      {/* 3. RECENT ACTIVITY & GUIDELINE */}
+      {/* RECENT ACTIVITY & GUIDELINE */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left: Recent Uploads (2/3 width) */}
@@ -129,10 +129,10 @@ export default function KoordinatorRisetView({ user, data }: { user: any, data: 
            </div>
         </div>
 
-        {/* Right: Quick Guideline (1/3 width) */}
+        {/* Quick Guideline */}
         <div className="space-y-4">
            <h3 className="font-bold text-gray-800">Panduan Riset</h3>
-           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-5 text-white shadow-lg">
+           <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-xl p-5 text-white shadow-lg">
               <h4 className="font-bold mb-2">Alur Publikasi</h4>
               <ul className="space-y-3 text-sm text-gray-300">
                  <li className="flex gap-2">

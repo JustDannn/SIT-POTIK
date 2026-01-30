@@ -6,14 +6,14 @@ import { eq, desc, and, like } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
-// 1. GET LIST ARCHIVES
+type ArchiveCategory = "surat_masuk" | "surat_keluar" | "proposal" | "sk" | "lainnya";
+
 export async function getArchives(query: string = "", category: string = "") {
-  // Bikin filter dinamis
+  // filter dinamis
   const filters = [like(archives.title, `%${query}%`)];
 
   if (category && category !== "all") {
-    // @ts-ignore - Drizzle enum type check workaround
-    filters.push(eq(archives.category, category));
+    filters.push(eq(archives.category, category as ArchiveCategory));
   }
 
   const data = await db
@@ -34,7 +34,7 @@ export async function getArchives(query: string = "", category: string = "") {
   return data;
 }
 
-// 2. UPLOAD ACTION
+// UPLOAD ACTION
 export async function uploadArchive(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -50,23 +50,15 @@ export async function uploadArchive(formData: FormData) {
   if (!file) return { success: false, error: "File wajib diupload" };
 
   try {
-    // A. Upload File ke Supabase Storage
-    // Nama file unik: timestamp-namafile
     const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
-
-    // Pastikan bucket 'archives' sudah dibuat di Supabase Dashboard!
     const { data: storageData, error: storageError } = await supabase.storage
       .from("archives")
       .upload(fileName, file);
 
     if (storageError) throw new Error(storageError.message);
-
-    // Dapatkan Public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from("archives").getPublicUrl(fileName);
-
-    // B. Simpan Metadata ke Database
     await db.insert(archives).values({
       title,
       category,
@@ -83,19 +75,15 @@ export async function uploadArchive(formData: FormData) {
   }
 }
 
-// 3. DELETE ACTION
+// DELETE ACTION
 export async function deleteArchive(id: number, fileUrl: string) {
   const supabase = await createClient();
 
   try {
-    // A. Hapus File dari Storage (Optional, biar hemat storage)
-    // Ambil nama file dari URL
     const fileName = fileUrl.split("/").pop();
     if (fileName) {
       await supabase.storage.from("archives").remove([fileName]);
     }
-
-    // B. Hapus Data dari DB
     await db.delete(archives).where(eq(archives.id, id));
 
     revalidatePath("/dashboard/archives");
