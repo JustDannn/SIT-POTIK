@@ -204,6 +204,33 @@ export const contentPlans = pgTable("content_plans", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const publications = pgTable("publications", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").unique().notNull(),
+  excerpt: text("excerpt"),
+  content: text("content"),
+  fileUrl: text("file_url"),
+  thumbnailUrl: text("thumbnail_url"),
+  category: text("category").notNull(), // 'Artikel', 'Infografis', 'Paper'
+  status: text("status").default("draft"),
+  authorId: uuid("author_id").references(() => users.id),
+  divisionId: integer("division_id").references(() => divisions.id),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const publicationsRelations = relations(publications, ({ one }) => ({
+  author: one(users, {
+    fields: [publications.authorId],
+    references: [users.id],
+  }),
+  division: one(divisions, {
+    fields: [publications.divisionId],
+    references: [divisions.id],
+  }),
+}));
+
 export const contentPlansRelations = relations(contentPlans, ({ one }) => ({
   pic: one(users, {
     fields: [contentPlans.picId],

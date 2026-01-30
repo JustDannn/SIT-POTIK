@@ -1,20 +1,20 @@
-// src/app/dashboard/page.tsx
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
-// Import Views
+// --- IMPORT VIEWS ---
 import KetuaView from "./_views/KetuaView";
+import KoordinatorRisetView from "./_views/KoordinatorRisetView"; // 👈 View baru
 // import AnggotaView from "./_views/AnggotaView";
-// ... import view lain
 
-// Import Server Actions Baru
+// --- IMPORT ACTIONS ---
 import {
   getDashboardStats,
   getTimelineData,
   getAttentionItems,
+  getRisetStats,
 } from "./actions";
 
 export default async function DashboardPage() {
@@ -26,18 +26,25 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!authUser) redirect("/login");
 
-  // 2. Ambil Role User
+  // 2. Ambil Role User & DIVISI (PENTING!)
   const userProfile = await db.query.users.findFirst({
     where: eq(users.id, authUser.id),
-    with: { role: true },
+    with: {
+      role: true,
+      division: true, // 👈 WAJIB ADA: Biar tau dia Koor Riset atau Media
+    },
   });
 
-  if (!userProfile?.role) return <div>Error: Role missing</div>;
+  if (!userProfile?.role)
+    return <div className="p-8">Error: Role missing. Hubungi Admin.</div>;
 
   const roleName = userProfile.role.roleName;
+  // Normalisasi nama divisi biar aman (handle null & lowercase)
+  const divisionName = userProfile.division?.divisionName.toLowerCase() || "";
 
-  // 3. LOGIC FETCHING BERDASARKAN ROLE
-  // Kita fetch data KHUSUS buat Ketua di sini
+  // ============================================================
+  // 3. LOGIC KETUA
+  // ============================================================
   if (roleName === "Ketua") {
     // Jalankan 3 fungsi query secara paralel biar ngebut
     const [stats, timelineData, attentionData] = await Promise.all([
@@ -46,7 +53,6 @@ export default async function DashboardPage() {
       getAttentionItems(),
     ]);
 
-    // Lempar datanya ke View
     return (
       <KetuaView
         user={userProfile}
@@ -57,6 +63,44 @@ export default async function DashboardPage() {
     );
   }
 
-  // ... Logic role lain (Anggota, Koordinator, dll)
-  //   return <AnggotaView user={userProfile} />;
+  // ============================================================
+  // 4. LOGIC KOORDINATOR
+  // ============================================================
+  if (roleName === "Koordinator") {
+    // A. KOORDINATOR RISET & DATA
+    // Pake .includes biar fleksibel (misal di DB tulisannya "Divisi Riset" tetep kena)
+    if (divisionName.includes("riset") || divisionName.includes("data")) {
+      // Pastikan divisionId ada
+      if (!userProfile.divisionId)
+        return <div>Error: Divisi belum di-assign.</div>;
+
+      // Ambil statistik khusus Riset
+      const risetData = await getRisetStats(userProfile.divisionId);
+
+      return <KoordinatorRisetView user={userProfile} data={risetData} />;
+    }
+
+    // B. KOORDINATOR LAIN (Media, SDM, dll - Coming Soon)
+    return (
+      <div className="p-10 text-center border border-dashed rounded-xl m-8">
+        <h2 className="text-xl font-bold text-gray-700">
+          Dashboard Koordinator {userProfile.division?.divisionName}
+        </h2>
+        <p className="text-gray-500 mt-2">
+          Fitur spesifik divisi ini sedang dalam pengembangan 🚧
+        </p>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // 5. LOGIC ANGGOTA / LAINNYA
+  // ============================================================
+  return (
+    <div className="p-10 text-center">
+      <h2 className="text-xl font-bold">Dashboard Anggota</h2>
+      <p>Selamat datang, {userProfile.name}. Silakan cek menu di samping.</p>
+    </div>
+  );
+  // return <AnggotaView user={userProfile} />;
 }

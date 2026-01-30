@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { prokers, tasks, users } from "@/db/schema";
-import { eq, sql, desc, and, ne } from "drizzle-orm";
+import { prokers, tasks, users, publications } from "@/db/schema";
+import { eq, sql, desc, and, ne, count } from "drizzle-orm";
 
 export async function getDashboardStats() {
   const activeProkers = await db
@@ -57,4 +57,57 @@ export async function getAttentionItems() {
     link: `/dashboard/proker/${p.id}`,
     type: "proker" as const,
   }));
+}
+export async function getRisetStats(divisionId: number) {
+  // 1. Hitung Total Artikel
+  const articleCount = await db
+    .select({ count: count() })
+    .from(publications)
+    .where(
+      and(
+        eq(publications.divisionId, divisionId),
+        eq(publications.category, "Artikel"),
+      ),
+    );
+
+  // 2. Hitung Total Infografis
+  const infographicCount = await db
+    .select({ count: count() })
+    .from(publications)
+    .where(
+      and(
+        eq(publications.divisionId, divisionId),
+        eq(publications.category, "Infografis"),
+      ),
+    );
+
+  // 3. Hitung yang statusnya 'draft' atau 'review' (Pending)
+  const pendingCount = await db
+    .select({ count: count() })
+    .from(publications)
+    .where(
+      and(
+        eq(publications.divisionId, divisionId),
+        eq(publications.status, "draft"), // Asumsi 'draft' butuh action
+      ),
+    );
+
+  // 4. Ambil 5 Publikasi Terakhir (Buat list 'Recent Uploads')
+  const recentUploads = await db.query.publications.findMany({
+    where: eq(publications.divisionId, divisionId),
+    orderBy: [desc(publications.createdAt)],
+    limit: 5,
+    with: {
+      author: true, // Biar tau siapa yang upload
+    },
+  });
+
+  return {
+    stats: {
+      articles: articleCount[0].count,
+      infographics: infographicCount[0].count,
+      pending: pendingCount[0].count,
+    },
+    recentUploads,
+  };
 }

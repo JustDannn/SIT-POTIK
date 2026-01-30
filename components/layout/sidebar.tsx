@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react"; // Tambah useMemo
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ROLE_MENUS, MenuItem } from "@/config/menu";
+import { getMenuForUser } from "@/config/menu-generator";
 import { LogOut, Search, ChevronLeft, ChevronRight, Sun } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -22,7 +22,7 @@ interface SidebarProps {
   };
 }
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user }: { user: any }) {
   const router = useRouter();
   const handleLogout = async () => {
     const supabase = createClient();
@@ -34,7 +34,10 @@ export default function Sidebar({ user }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
 
-  const menus: MenuItem[] = ROLE_MENUS[user.role] || [];
+  const menuItems = getMenuForUser(
+    user.role?.roleName,
+    user.division?.divisionName,
+  );
 
   const avatarDataUri = useMemo(() => {
     const avatar = createAvatar(dylan, {
@@ -111,7 +114,7 @@ export default function Sidebar({ user }: SidebarProps) {
 
       {/* 3. Dynamic Menu Items */}
       <nav className="flex-1 space-y-1 px-4 overflow-y-auto scrollbar-hide">
-        {menus.map((item) => {
+        {menuItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link

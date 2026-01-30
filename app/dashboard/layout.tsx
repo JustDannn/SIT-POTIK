@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import Sidebar from "@/components/layout/sidebar";
 import { db } from "@/db";
-import { users, roles } from "@/db/schema"; // Pastikan path schema bener
+import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export default async function DashboardLayout({
@@ -19,26 +19,26 @@ export default async function DashboardLayout({
   if (error || !authUser) {
     redirect("/login");
   }
+
   const userProfile = await db.query.users.findFirst({
     where: eq(users.id, authUser.id),
     with: {
       role: true,
+      division: true,
     },
   });
-  if (!userProfile || !userProfile.role) {
-    return <div>Error: Role not found. Contact Admin.</div>;
-  }
-  const userData = {
-    name: userProfile.name,
-    email: userProfile.email,
-    role: userProfile.role.roleName, // Contoh: "Ketua", "Anggota"
-    avatarUrl: undefined, // Atau ambil dari kolom avatar kalau ada
-  };
 
+  if (!userProfile || !userProfile.role) {
+    return (
+      <div className="p-10 text-center">
+        Error: User Profile / Role not found. Contact Admin.
+      </div>
+    );
+  }
   return (
     <div className="flex h-screen w-full overflow-hidden bg-gray-50">
       {/* Sidebar Otomatis Menyesuaikan Role */}
-      <Sidebar user={userData} />
+      <Sidebar user={userProfile} />
 
       {/* Area Konten Utama */}
       <main className="flex-1 overflow-y-auto p-8">{children}</main>
