@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 // --- IMPORT VIEWS ---
 import KetuaView from "./_views/KetuaView";
+import SecretaryDashboard from "./_views/SecretaryDashboard";
 import KoordinatorRisetView from "./_views/KoordinatorRisetView"; // 👈 View baru
 // import AnggotaView from "./_views/AnggotaView";
 
@@ -15,6 +16,7 @@ import {
   getTimelineData,
   getAttentionItems,
   getRisetStats,
+  getSecretaryDashboardData,
 } from "./actions";
 
 export default async function DashboardPage() {
@@ -31,7 +33,7 @@ export default async function DashboardPage() {
     where: eq(users.id, authUser.id),
     with: {
       role: true,
-      division: true, // 👈 WAJIB ADA: Biar tau dia Koor Riset atau Media
+      division: true,
     },
   });
 
@@ -92,7 +94,10 @@ export default async function DashboardPage() {
       </div>
     );
   }
-
+  if (roleName === "Sekretaris") {
+    const dashboardData = await getSecretaryDashboardData();
+    return <SecretaryDashboard data={dashboardData} user={userProfile} />;
+  }
   // ============================================================
   // 5. LOGIC ANGGOTA / LAINNYA
   // ============================================================

@@ -1,7 +1,14 @@
 "use server";
 
 import { db } from "@/db";
-import { prokers, tasks, users, publications } from "@/db/schema";
+import {
+  prokers,
+  tasks,
+  users,
+  publications,
+  minutes,
+  archives,
+} from "@/db/schema";
 import { eq, sql, desc, and, ne, count } from "drizzle-orm";
 
 export async function getDashboardStats() {
@@ -109,5 +116,50 @@ export async function getRisetStats(divisionId: number) {
       pending: pendingCount[0].count,
     },
     recentUploads,
+  };
+}
+export async function getSecretaryDashboardData() {
+  // 1. Hitung Total Notulensi
+  const statsMinutes = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(minutes);
+
+  // 2. Hitung Total Arsip
+  const statsArchives = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(archives);
+
+  // 3. Ambil 5 Notulensi Terakhir
+  const recentMinutes = await db
+    .select()
+    .from(minutes)
+    .orderBy(desc(minutes.meetingDate))
+    .limit(5);
+
+  // 4. Ambil 5 Arsip Terakhir
+  const recentArchives = await db
+    .select({
+      id: archives.id,
+      title: archives.title,
+      category: archives.category,
+      createdAt: archives.createdAt,
+      uploader: users.name,
+    })
+    .from(archives)
+    .leftJoin(users, eq(archives.uploadedBy, users.id))
+    .orderBy(desc(archives.createdAt))
+    .limit(5);
+
+  return {
+    stats: {
+      minutes: Number(statsMinutes[0].count),
+      archives: Number(statsArchives[0].count),
+    },
+    recentMinutes,
+    recentArchives,
   };
 }

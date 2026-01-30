@@ -27,7 +27,7 @@ export default async function ReportsPage() {
   return (
     <DivisionReportView
       data={reportData}
-      divisionName={userProfile.division?.name || "Divisi Riset"}
+      divisionName={userProfile.division?.divisionName || "Divisi Riset"}
     />
   );
 }

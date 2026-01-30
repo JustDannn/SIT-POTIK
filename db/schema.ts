@@ -47,7 +47,14 @@ export const meetingTypeEnum = pgEnum("meeting_type", [
   "dosen",
   "internal",
 ]);
-
+export const minuteStatusEnum = pgEnum("minute_status", ["draft", "published"]);
+export const archiveCategoryEnum = pgEnum("archive_category", [
+  "surat_masuk",
+  "surat_keluar",
+  "proposal",
+  "sk",
+  "lainnya",
+]);
 export const roles = pgTable("roles", {
   id: serial("role_id").primaryKey(),
   roleName: text("role_name").notNull(), // Anggota, Ketua, dll.
@@ -120,15 +127,24 @@ export const activityLogs = pgTable("activity_logs", {
 
 export const minutes = pgTable("minutes", {
   id: serial("notulensi_id").primaryKey(),
-  prokerId: integer("proker_id").references(() => prokers.id),
-  meetingType: meetingTypeEnum("meeting_type").notNull(),
+  prokerId: integer("proker_id").references(() => prokers.id), // Nullable (bisa rapat umum tanpa proker)
+  meetingType: meetingTypeEnum("meeting_type").default("internal"), // Default aja biar ga error
   title: text("title").notNull(),
+  content: text("content"),
+  attendees: text("attendees"), // Daftar hadir (string dipisah koma)
+  status: minuteStatusEnum("status").default("draft"), // Draft vs Published
   uploadedBy: uuid("uploaded_by")
     .references(() => users.id)
     .notNull(),
-  filePath: text("file_path").notNull(),
-  meetingDate: timestamp("meeting_date"),
+
+  // Ubah filePath jadi nullable (opsional), karena mungkin cuma ngetik teks doang
+  filePath: text("file_path"),
+
+  meetingDate: timestamp("meeting_date").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()), // Tambah ini buat tracking edit
 });
 
 export const reports = pgTable("reports", {
@@ -225,6 +241,15 @@ export const publications = pgTable("publications", {
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => new Date()),
+});
+export const archives = pgTable("archives", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  category: archiveCategoryEnum("category").notNull(),
+  description: text("description"),
+  fileUrl: text("file_url"), // URL file di storage
+  uploadedBy: uuid("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const publicationsRelations = relations(publications, ({ one }) => ({
