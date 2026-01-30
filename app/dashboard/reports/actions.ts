@@ -1,24 +1,33 @@
 "use server";
 
 import { db } from "@/db";
-import { tasks, prokers, publications, users } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { tasks, prokers, publications, users, divisions } from "@/db/schema"; // Tambah import divisions
+import { eq, sql, and } from "drizzle-orm";
 
-export async function getReportData(divisionId: number) {
-  // 1. Ambil Data Proker & Progress Tasks-nya
+// Parameter jadi opsional (number | undefined)
+export async function getReportData(divisionId?: number) {
+  const prokerFilter = divisionId
+    ? eq(prokers.divisionId, divisionId)
+    : undefined;
+  const pubFilter = divisionId
+    ? eq(publications.divisionId, divisionId)
+    : undefined;
+  const userFilter = divisionId ? eq(users.divisionId, divisionId) : undefined;
+
+  // 1. Ambil Data Proker
   const prokerList = await db
     .select({
       id: prokers.id,
       title: prokers.title,
-      // Hitung total tasks per proker
+      divisionName: divisions.divisionName, // Tambah nama divisi biar tau ini proker siapa
       totalTasks: sql<number>`count(${tasks.id})`,
-      // Hitung tasks yang selesai
       completedTasks: sql<number>`count(case when ${tasks.status} = 'done' then 1 end)`,
     })
     .from(prokers)
     .leftJoin(tasks, eq(prokers.id, tasks.prokerId))
-    .where(eq(prokers.divisionId, divisionId))
-    .groupBy(prokers.id, prokers.title);
+    .leftJoin(divisions, eq(prokers.divisionId, divisions.id)) // Join ke tabel divisi
+    .where(prokerFilter) // Filter dinamis
+    .groupBy(prokers.id, prokers.title, divisions.divisionName);
 
   // 2. Statistik Publikasi
   const pubStats = await db
@@ -27,25 +36,26 @@ export async function getReportData(divisionId: number) {
       count: sql<number>`count(*)`,
     })
     .from(publications)
-    .where(eq(publications.divisionId, divisionId))
+    .where(pubFilter) // Filter dinamis
     .groupBy(publications.category);
 
-  // 3. Statistik Anggota (Siapa paling rajin?)
+  // 3. Statistik Anggota (Top Performer)
   const memberStats = await db
     .select({
       name: users.name,
+      divisionName: divisions.divisionName,
       tasksDone: sql<number>`count(case when ${tasks.status} = 'done' then 1 end)`,
     })
     .from(users)
     .leftJoin(tasks, eq(users.id, tasks.assignedUserId))
-    .where(eq(users.divisionId, divisionId))
-    .groupBy(users.id, users.name)
+    .leftJoin(divisions, eq(users.divisionId, divisions.id))
+    .where(userFilter) // Filter dinamis
+    .groupBy(users.id, users.name, divisions.divisionName)
     .orderBy(sql`count(case when ${tasks.status} = 'done' then 1 end) desc`)
-    .limit(5); // Top 5 Member
+    .limit(5);
 
-  // Format Data biar enak di UI
+  // Format Data
   const totalProker = prokerList.length;
-  // Hitung rata-rata progress seluruh divisi
   let totalProgressSum = 0;
 
   const formattedProkers = prokerList.map((p) => {

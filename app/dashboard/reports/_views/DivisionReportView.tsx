@@ -116,6 +116,8 @@ export default function DivisionReportView({
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
                 <tr>
+                  {/* Tambah Kolom Divisi */}
+                  <th className="px-4 py-3">Divisi</th>
                   <th className="px-4 py-3">Nama Program Kerja</th>
                   <th className="px-4 py-3 text-center">Tugas Selesai</th>
                   <th className="px-4 py-3">Progress Bar</th>
@@ -125,6 +127,10 @@ export default function DivisionReportView({
               <tbody className="divide-y divide-gray-100">
                 {data.prokers.map((p: any) => (
                   <tr key={p.id}>
+                    {/* Tampilkan Nama Divisi */}
+                    <td className="px-4 py-3 text-xs text-gray-500 font-medium uppercase tracking-wider">
+                      {p.divisionName || "-"}
+                    </td>
                     <td className="px-4 py-3 font-medium text-gray-900">
                       {p.title}
                     </td>
