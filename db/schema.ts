@@ -5,6 +5,7 @@ import {
   timestamp,
   boolean,
   uuid,
+  date,
   integer,
   pgEnum,
   decimal,
@@ -99,6 +100,9 @@ export const tasks = pgTable("tasks", {
   status: taskStatusEnum("status").default("todo"),
   deadline: timestamp("deadline"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const activityLogs = pgTable("activity_logs", {
@@ -218,6 +222,9 @@ export const publications = pgTable("publications", {
   divisionId: integer("division_id").references(() => divisions.id),
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const publicationsRelations = relations(publications, ({ one }) => ({

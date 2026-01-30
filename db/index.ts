@@ -6,13 +6,13 @@ import * as schema from "./schema";
 // Force IPv4 for DNS resolution
 const originalLookup = dns.lookup;
 // @ts-ignore
-dns.lookup = (hostname, options, callback) => {
+dns.lookup = (hostname: string, options: any, callback: any) => {
   if (typeof options === "function") {
     callback = options;
     options = {};
   }
-  options = { ...options, family: 4 };
-  return originalLookup(hostname, options, callback);
+  const opts = typeof options === "object" ? { ...options, family: 4 } : { family: 4 };
+  return originalLookup(hostname, opts, callback);
 };
 
 const connectionString = process.env.DATABASE_URL!;
