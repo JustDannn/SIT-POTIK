@@ -10,8 +10,11 @@ import {
   archives,
   financeRecords,
   lpjs,
+  guestBooks,
 } from "@/db/schema";
-import { eq, sql, desc, and, ne, count } from "drizzle-orm";
+import { eq, sql, desc, and, ne, count, gte } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/utils/supabase/server";
 
 export async function getDashboardStats() {
   const activeProkers = await db
@@ -224,4 +227,99 @@ export async function getTreasurerDashboardData() {
     recentTransactions,
     pendingLpjs,
   };
+}
+// GET DASHBOARD DATA & RECAP
+export async function getLayananDataStats() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // Hitung Total Pengunjung Bulan Ini
+  const monthlyStats = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(guestBooks)
+    .where(gte(guestBooks.visitDate, startOfMonth));
+
+  // Hitung Breakdown Tipe Layanan (Semua Waktu)
+  const serviceStats = await db
+    .select({
+      type: guestBooks.serviceType,
+      count: sql<number>`count(*)`,
+    })
+    .from(guestBooks)
+    .groupBy(guestBooks.serviceType);
+
+  // Ambil 5 Tamu Terakhir
+  const recentGuests = await db
+    .select({
+      id: guestBooks.id,
+      name: guestBooks.name,
+      institution: guestBooks.institution,
+      serviceType: guestBooks.serviceType,
+      needs: guestBooks.needs,
+      visitDate: guestBooks.visitDate,
+      officerName: users.name,
+    })
+    .from(guestBooks)
+    .leftJoin(users, eq(guestBooks.servedBy, users.id))
+    .orderBy(desc(guestBooks.visitDate))
+    .limit(5);
+
+  return {
+    monthlyVisitors: Number(monthlyStats[0]?.count || 0),
+    serviceDistribution: serviceStats,
+    recentGuests,
+  };
+}
+
+// INPUT TAMU BARU (ABSEN)
+export async function addGuestEntry(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const name = formData.get("name") as string;
+  const institution = formData.get("institution") as string;
+  const phone = formData.get("phone") as string;
+  const serviceType = formData.get("serviceType") as any;
+  const needs = formData.get("needs") as string;
+
+  try {
+    await db.insert(guestBooks).values({
+      name,
+      institution,
+      phone,
+      serviceType,
+      needs,
+      servedBy: user.id, // Petugas yang lagi login (piket)
+      visitDate: new Date(),
+    });
+
+    revalidatePath("/dashboard/layanan-data");
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: "Gagal mencatat tamu" };
+  }
+}
+
+// GET ALL LOGS (Buat Halaman Full Rekap)
+export async function getAllGuestLogs(query: string = "") {
+  // Simple search logic bisa ditambah disini nanti
+  return await db
+    .select({
+      id: guestBooks.id,
+      name: guestBooks.name,
+      institution: guestBooks.institution,
+      serviceType: guestBooks.serviceType,
+      needs: guestBooks.needs,
+      visitDate: guestBooks.visitDate,
+      officerName: users.name,
+    })
+    .from(guestBooks)
+    .leftJoin(users, eq(guestBooks.servedBy, users.id))
+    .orderBy(desc(guestBooks.visitDate));
 }

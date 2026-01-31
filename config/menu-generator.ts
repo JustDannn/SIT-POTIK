@@ -13,6 +13,7 @@ import {
   AlertCircle,
   BookOpen,
   PieChart,
+  Database,
   Share2,
 } from "lucide-react";
 
@@ -45,7 +46,7 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     const div = divisionName?.toLowerCase() || "";
 
     // Divisi Riset & Data
-    if (div.includes("riset") || div.includes("data")) {
+    if (div.includes("riset") || div.includes("infografis")) {
       divisionMenu = [
         {
           title: "Publikasi",
@@ -60,11 +61,29 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
         { title: "Content Plan", href: "/dashboard/content", icon: PenTool },
       ];
     }
-    // Divisi SDM
-    else if (div.includes("sdm") || div.includes("human")) {
+    // Divisi pr & sdm
+    else if (
+      div.includes("humas") ||
+      div.includes("public") ||
+      div.includes("relation")
+    ) {
       divisionMenu = [
+        // Sisi Eksternal
+        {
+          title: "Database Mitra",
+          href: "/dashboard/partners",
+          icon: Building2,
+        },
+        // Sisi Internal
         { title: "Database Anggota", href: "/dashboard/members", icon: Users },
-        { title: "Training Log", href: "/dashboard/trainings", icon: BookOpen },
+      ];
+    } else if (div.includes("layanan") || div.includes("data")) {
+      divisionMenu = [
+        {
+          title: "Buku Tamu",
+          href: "/dashboard/bukutamu",
+          icon: Database,
+        },
       ];
     }
 
@@ -73,9 +92,7 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     return [...baseMenu, ...divisionMenu, ...managementMenu];
   }
 
-  // =========================================
-  // 3. SEKRETARIS
-  // =========================================
+  // SEKRETARIS
   if (role === "Sekretaris") {
     return [
       ...baseMenu,
@@ -85,9 +102,7 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     ];
   }
 
-  // =========================================
-  // 4. BENDAHARA
-  // =========================================
+  // BENDAHARA
   if (role === "Bendahara") {
     return [
       ...baseMenu,
@@ -105,9 +120,7 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     ];
   }
 
-  // =========================================
-  // 5. ANGGOTA (DEFAULT)
-  // =========================================
+  // ANGGOTA (DEFAULT)
   return [
     ...baseMenu,
     { title: "Proker Saya", href: "/dashboard/proker", icon: BarChart3 },

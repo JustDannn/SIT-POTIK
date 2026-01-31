@@ -9,9 +9,10 @@ import KetuaView from "./_views/KetuaView";
 import SecretaryDashboard from "./_views/SecretaryDashboard";
 import KoordinatorRisetView from "./_views/KoordinatorRisetView";
 import TreasurerDashboard from "./_views/TreasurerDashboard";
+import LayananDataDashboard from "./_views/LayananDataDashboard";
 // import AnggotaView from "./_views/AnggotaView";
 
-// --- IMPORT ACTIONS ---
+// IMPORT ACTIONS
 import {
   getDashboardStats,
   getTimelineData,
@@ -19,18 +20,19 @@ import {
   getRisetStats,
   getSecretaryDashboardData,
   getTreasurerDashboardData,
+  getLayananDataStats,
 } from "./actions";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  // 1. Auth Check
+  // Auth Check
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
   if (!authUser) redirect("/login");
 
-  // 2. Ambil Role User & DIVISI (PENTING!)
+  // Ambil Role User & DIVISI
   const userProfile = await db.query.users.findFirst({
     where: eq(users.id, authUser.id),
     with: {
@@ -43,12 +45,10 @@ export default async function DashboardPage() {
     return <div className="p-8">Error: Role missing. Hubungi Admin.</div>;
 
   const roleName = userProfile.role.roleName;
-  // Normalisasi nama divisi biar aman (handle null & lowercase)
+  // Normalisasi nama divisi (handle null & lowercase)
   const divisionName = userProfile.division?.divisionName.toLowerCase() || "";
 
-  // ============================================================
-  // 3. LOGIC KETUA
-  // ============================================================
+  // LOGIC KETUA
   if (roleName === "Ketua") {
     // Jalankan 3 fungsi query secara paralel biar ngebut
     const [stats, timelineData, attentionData] = await Promise.all([
@@ -67,14 +67,10 @@ export default async function DashboardPage() {
     );
   }
 
-  // ============================================================
-  // 4. LOGIC KOORDINATOR
-  // ============================================================
+  // LOGIC KOORDINATOR
   if (roleName === "Koordinator") {
-    // A. KOORDINATOR RISET & DATA
-    // Pake .includes biar fleksibel (misal di DB tulisannya "Divisi Riset" tetep kena)
-    if (divisionName.includes("riset") || divisionName.includes("data")) {
-      // Pastikan divisionId ada
+    // KOORDINATOR RISET & DATA
+    if (divisionName.includes("riset") || divisionName.includes("infografis")) {
       if (!userProfile.divisionId)
         return <div>Error: Divisi belum di-assign.</div>;
 
@@ -83,8 +79,16 @@ export default async function DashboardPage() {
 
       return <KoordinatorRisetView user={userProfile} data={risetData} />;
     }
+    if (divisionName.includes("layanan") || divisionName.includes("data")) {
+      if (!userProfile.divisionId)
+        return <div>Error: Divisi belum di-assign.</div>;
 
-    // B. KOORDINATOR LAIN (Media, SDM, dll - Coming Soon)
+      // Ambil statistik khusus Layanan data
+      const layananData = await getLayananDataStats();
+      return <LayananDataDashboard user={userProfile} data={layananData} />;
+    }
+
+    //KOORDINATOR LAIN (Media, SDM, dll - Coming Soon)
     return (
       <div className="p-10 text-center border border-dashed rounded-xl m-8">
         <h2 className="text-xl font-bold text-gray-700">
@@ -104,9 +108,8 @@ export default async function DashboardPage() {
     const dashboardData = await getTreasurerDashboardData();
     return <TreasurerDashboard data={dashboardData} user={userProfile} />;
   }
-  // ============================================================
-  // 5. LOGIC ANGGOTA / LAINNYA
-  // ============================================================
+
+  // LOGIC ANGGOTA / LAINNYA
   return (
     <div className="p-10 text-center">
       <h2 className="text-xl font-bold">Dashboard Anggota</h2>

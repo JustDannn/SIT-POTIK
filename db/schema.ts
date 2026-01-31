@@ -55,6 +55,28 @@ export const archiveCategoryEnum = pgEnum("archive_category", [
   "sk",
   "lainnya",
 ]);
+export const partnerCategoryEnum = pgEnum("partner_category", [
+  "sponsor",
+  "media_partner",
+  "pemateri",
+  "universitas",
+  "pemerintah",
+  "lainnya",
+]);
+export const partnerStatusEnum = pgEnum("partner_status", [
+  "prospect",
+  "contacted",
+  "negotiating",
+  "deal",
+  "rejected",
+]);
+export const serviceTypeEnum = pgEnum("service_type", [
+  "permintaan_data",
+  "konsultasi",
+  "instalasi_software",
+  "lainnya",
+]);
+
 export const roles = pgTable("roles", {
   id: serial("role_id").primaryKey(),
   roleName: text("role_name").notNull(), // Anggota, Ketua, dll.
@@ -255,7 +277,57 @@ export const archives = pgTable("archives", {
   uploadedBy: uuid("uploaded_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
+export const partners = pgTable("partners", {
+  id: serial("partner_id").primaryKey(),
+  name: text("name").notNull(), // Nama Instansi/Orang
+  category: partnerCategoryEnum("category").notNull(),
 
+  // Kontak Person
+  picName: text("pic_name"),
+  picPhone: text("pic_phone"),
+  picEmail: text("pic_email"),
+
+  // Tracking
+  status: partnerStatusEnum("status").default("prospect"),
+  address: text("address"),
+  website: text("website"),
+
+  // Metadata
+  managedBy: uuid("managed_by").references(() => users.id), // Siapa humas yang pegang
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+export const guestBooks = pgTable("guest_books", {
+  id: serial("guest_id").primaryKey(),
+
+  // Data Diri Tamu
+  name: text("name").notNull(),
+  institution: text("institution").notNull(), // Asal Prodi / Instansi
+  phone: text("phone"), // Opsional, buat follow up
+
+  // Detail Layanan
+  serviceType: serviceTypeEnum("service_type").default("permintaan_data"),
+  needs: text("needs").notNull(), // Detail data yang diminta / topik konsultasi
+
+  // Metadata
+  servedBy: uuid("served_by").references(() => users.id), // Siapa petugas yang jaga
+  visitDate: timestamp("visit_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export const guestBooksRelations = relations(guestBooks, ({ one }) => ({
+  officer: one(users, {
+    fields: [guestBooks.servedBy],
+    references: [users.id],
+  }),
+}));
+export const partnersRelations = relations(partners, ({ one }) => ({
+  pic: one(users, {
+    fields: [partners.managedBy],
+    references: [users.id],
+  }),
+}));
 export const publicationsRelations = relations(publications, ({ one }) => ({
   author: one(users, {
     fields: [publications.authorId],
