@@ -4,7 +4,9 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getContentList } from "./actions";
+
 import KetuaContentView from "./_views/KetuaContentView";
+import KoordinatorContentView from "./_views/KoordinatorContentView";
 
 export default async function ContentPage() {
   const supabase = await createClient();
@@ -13,19 +15,21 @@ export default async function ContentPage() {
   } = await supabase.auth.getUser();
   if (!authUser) redirect("/login");
 
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
-    with: { role: true },
-  });
-  if (!userProfile?.role) return <div>Unauthorized</div>;
+  const { role, data } = await getContentList();
 
-  const roleName = userProfile.role.roleName;
-
-  const contentData = await getContentList();
-
-  if (roleName === "Ketua") {
-    return <KetuaContentView data={contentData} />;
+  // View KETUA (Social Media Plan)
+  if (role === "Ketua") {
+    return <KetuaContentView data={data} />;
   }
 
-  return <div>Halaman Konten untuk {roleName} belum dibuat.</div>;
+  // View KOORDINATOR (Artikel & Publikasi Web)
+  if (role === "Koordinator") {
+    return <KoordinatorContentView data={data} />;
+  }
+
+  return (
+    <div className="p-10 text-center text-gray-400">
+      Anda tidak memiliki akses ke fitur konten.
+    </div>
+  );
 }

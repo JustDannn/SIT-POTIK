@@ -64,11 +64,9 @@ export const partnerCategoryEnum = pgEnum("partner_category", [
   "lainnya",
 ]);
 export const partnerStatusEnum = pgEnum("partner_status", [
-  "prospect",
-  "contacted",
-  "negotiating",
-  "deal",
-  "rejected",
+  "active",
+  "inactive",
+  "potential",
 ]);
 export const serviceTypeEnum = pgEnum("service_type", [
   "permintaan_data",
@@ -278,26 +276,14 @@ export const archives = pgTable("archives", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 export const partners = pgTable("partners", {
-  id: serial("partner_id").primaryKey(),
-  name: text("name").notNull(), // Nama Instansi/Orang
-  category: partnerCategoryEnum("category").notNull(),
-
-  // Kontak Person
-  picName: text("pic_name"),
-  picPhone: text("pic_phone"),
-  picEmail: text("pic_email"),
-
-  // Tracking
-  status: partnerStatusEnum("status").default("prospect"),
-  address: text("address"),
-  website: text("website"),
-
-  // Metadata
-  managedBy: uuid("managed_by").references(() => users.id), // Siapa humas yang pegang
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // Nama Instansi/Desa/Komunitas
+  type: text("type").notNull(), // Desa, Instansi, Media, Kampus
+  picContact: text("pic_contact"), // Nama & No HP PIC
+  status: partnerStatusEnum("status").default("potential"),
+  lastFollowUp: timestamp("last_follow_up"), // Untuk alert follow-up
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date()),
 });
 export const guestBooks = pgTable("guest_books", {
   id: serial("guest_id").primaryKey(),
@@ -316,15 +302,10 @@ export const guestBooks = pgTable("guest_books", {
   visitDate: timestamp("visit_date").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
 export const guestBooksRelations = relations(guestBooks, ({ one }) => ({
   officer: one(users, {
     fields: [guestBooks.servedBy],
-    references: [users.id],
-  }),
-}));
-export const partnersRelations = relations(partners, ({ one }) => ({
-  pic: one(users, {
-    fields: [partners.managedBy],
     references: [users.id],
   }),
 }));
@@ -333,6 +314,7 @@ export const publicationsRelations = relations(publications, ({ one }) => ({
     fields: [publications.authorId],
     references: [users.id],
   }),
+
   division: one(divisions, {
     fields: [publications.divisionId],
     references: [divisions.id],

@@ -2,11 +2,7 @@ import {
   LayoutDashboard,
   BarChart3,
   FileText,
-  PenTool,
-  Building2,
-  Users,
   Wallet,
-  ScrollText,
   CheckCircle,
   Archive,
   History,
@@ -15,6 +11,10 @@ import {
   PieChart,
   Database,
   Share2,
+  PenTool,
+  Building2,
+  Users,
+  ScrollText,
 } from "lucide-react";
 
 export const getMenuForUser = (role?: string, divisionName?: string) => {
@@ -35,7 +35,7 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     ];
   }
   if (role === "Koordinator") {
-    const managementMenu = [
+    let managementMenu = [
       { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 },
       { title: "Task Management", href: "/dashboard/tasks", icon: CheckCircle },
       { title: "Log Aktivitas", href: "/dashboard/logs", icon: History },
@@ -44,7 +44,11 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
 
     let divisionMenu: any[] = [];
     const div = divisionName?.toLowerCase() || "";
-
+    if (div.includes("layanan")) {
+      managementMenu = managementMenu.filter(
+        (item) => item.title !== "Program Kerja",
+      );
+    }
     // Divisi Riset & Data
     if (div.includes("riset") || div.includes("infografis")) {
       divisionMenu = [
@@ -63,28 +67,28 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     }
     // Divisi pr & sdm
     else if (
-      div.includes("humas") ||
       div.includes("public") ||
-      div.includes("relation")
+      div.includes("relation") ||
+      div.includes("manusia")
     ) {
-      divisionMenu = [
-        // Sisi Eksternal
+      return [
+        ...baseMenu,
+        { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 },
         {
-          title: "Database Mitra",
+          title: "Konten & Publikasi",
+          href: "/dashboard/content",
+          icon: PenTool,
+        },
+        {
+          title: "Relasi & Partner",
           href: "/dashboard/partners",
           icon: Building2,
         },
-        // Sisi Internal
-        { title: "Database Anggota", href: "/dashboard/members", icon: Users },
+        { title: "Anggota & SDM", href: "/dashboard/members", icon: Users },
+        { title: "Laporan", href: "/dashboard/reports", icon: ScrollText },
       ];
     } else if (div.includes("layanan") || div.includes("data")) {
-      divisionMenu = [
-        {
-          title: "Buku Tamu",
-          href: "/dashboard/bukutamu",
-          icon: Database,
-        },
-      ];
+      divisionMenu = [];
     }
 
     // Gabungkan semuanya

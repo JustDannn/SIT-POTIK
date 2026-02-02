@@ -10,6 +10,7 @@ import SecretaryDashboard from "./_views/SecretaryDashboard";
 import KoordinatorRisetView from "./_views/KoordinatorRisetView";
 import TreasurerDashboard from "./_views/TreasurerDashboard";
 import LayananDataDashboard from "./_views/LayananDataDashboard";
+import PrSdmDashboardView from "./_views/PrSdmDashboardView";
 // import AnggotaView from "./_views/AnggotaView";
 
 // IMPORT ACTIONS
@@ -21,6 +22,7 @@ import {
   getSecretaryDashboardData,
   getTreasurerDashboardData,
   getLayananDataStats,
+  getPrSdmDashboardData,
 } from "./actions";
 
 export default async function DashboardPage() {
@@ -87,7 +89,14 @@ export default async function DashboardPage() {
       const layananData = await getLayananDataStats();
       return <LayananDataDashboard user={userProfile} data={layananData} />;
     }
+    if (divisionName.includes("public") || divisionName.includes("relation")) {
+      if (!userProfile.divisionId)
+        return <div>Error: Divisi belum di-assign.</div>;
 
+      // Ambil statistik khusus Public Relation & SDM
+      const PrSdm = await getPrSdmDashboardData(userProfile.divisionId);
+      return <PrSdmDashboardView user={userProfile} data={PrSdm} />;
+    }
     //KOORDINATOR LAIN (Media, SDM, dll - Coming Soon)
     return (
       <div className="p-10 text-center border border-dashed rounded-xl m-8">

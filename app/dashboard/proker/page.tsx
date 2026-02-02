@@ -7,43 +7,47 @@ import { redirect } from "next/navigation";
 // Actions & Views
 import { getAllProkers } from "./actions";
 import KetuaProkerView from "./_views/KetuaProkerView";
+import KoordinatorProkerView from "./_views/KoordinatorProkerView";
 
 export default async function ProkerPage() {
   const supabase = await createClient();
 
-  // 1. Auth Check
+  // Auth Check
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
   if (!authUser) redirect("/login");
 
-  // 2. Ambil Role
   const userProfile = await db.query.users.findFirst({
     where: eq(users.id, authUser.id),
-    with: { role: true },
+    with: { role: true, division: true },
   });
 
   if (!userProfile?.role) return <div>Unauthorized</div>;
   const roleName = userProfile.role.roleName;
 
-  // 3. Logic Switch View
-  // Kalau Ketua, kita kasih data semua proker
+  // Ambil data proker (sudah terfilter otomatis di server action berdasarkan role)
+  const prokersData = await getAllProkers();
+  const prokers = prokersData.map((p) => ({
+    ...p,
+    status: p.status ?? "created",
+  }));
+
+  // View KETUA (Melihat Semua)
   if (roleName === "Ketua") {
-    const prokersData = await getAllProkers();
-    const prokers = prokersData.map((p) => ({
-      ...p,
-      status: p.status ?? "created",
-    }));
     return <KetuaProkerView data={prokers as any} />;
   }
 
-  // TODO: Nanti buat view untuk Anggota/Koordinator di sini
-  // if (roleName === 'Koordinator') return <KoordinatorProkerView ... />
+  // View KOORDINATOR / ANGGOTA (Melihat Divisi Sendiri)
+  // Mereka bisa melihat tombol "Buat Proker Baru" di view ini.
+  if (roleName === "Koordinator" || roleName === "Anggota") {
+    return <KoordinatorProkerView data={prokers as any} user={userProfile} />;
+  }
 
   return (
     <div className="p-10 text-center">
       <h2 className="text-xl font-bold text-gray-400">
-        Tampilan Proker untuk {roleName} belum dibuat 🙏
+        Role tidak dikenali: {roleName}
       </h2>
     </div>
   );

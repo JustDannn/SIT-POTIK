@@ -11,8 +11,11 @@ import {
   financeRecords,
   lpjs,
   guestBooks,
+  partners,
+  activityLogs,
+  divisions,
 } from "@/db/schema";
-import { eq, sql, desc, and, ne, count, gte } from "drizzle-orm";
+import { eq, sql, desc, and, ne, count, gte, lt, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
@@ -322,4 +325,149 @@ export async function getAllGuestLogs(query: string = "") {
     .from(guestBooks)
     .leftJoin(users, eq(guestBooks.servedBy, users.id))
     .orderBy(desc(guestBooks.visitDate));
+}
+export async function getPrSdmDashboardData(divisionId: number) {
+  // 1. KPI RINGKAS
+  const contentPublished = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(publications)
+    .where(
+      and(
+        eq(publications.divisionId, divisionId),
+        eq(publications.status, "published"),
+      ),
+    );
+
+  const contentPending = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(publications)
+    .where(
+      and(
+        eq(publications.divisionId, divisionId),
+        eq(publications.status, "review"),
+      ),
+    ); // Review = Pending Approval Ketua
+
+  const activePartners = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(partners)
+    .where(eq(partners.status, "active"));
+
+  const activeProkers = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(prokers)
+    .where(
+      and(eq(prokers.divisionId, divisionId), eq(prokers.status, "active")),
+    );
+
+  // 2. ALERTS & ATTENTION NEEDED
+  let alerts: { type: string; message: string }[] = [];
+
+  // Alert 1: Konten Pending Review lama
+  // (Logic simplifikasi: Ambil semua yang pending)
+  const pendingContents = await db
+    .select({ title: publications.title })
+    .from(publications)
+    .where(
+      and(
+        eq(publications.divisionId, divisionId),
+        eq(publications.status, "review"),
+      ),
+    )
+    .limit(3);
+
+  pendingContents.forEach((c) => {
+    alerts.push({
+      type: "warning",
+      message: `Konten "${c.title}" menunggu approval Ketua.`,
+    });
+  });
+
+  // Alert 2: Partner butuh follow-up (lebih dari 10 hari)
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+  const stalePartners = await db
+    .select({ name: partners.name })
+    .from(partners)
+    .where(lt(partners.lastFollowUp, tenDaysAgo)) // lastFollowUp < 10 hari lalu
+    .limit(3);
+
+  stalePartners.forEach((p) => {
+    alerts.push({
+      type: "info",
+      message: `Partner "${p.name}" belum ada follow-up > 10 hari.`,
+    });
+  });
+
+  // 3. AKTIVITAS TERBARU (Human-Centric)
+  // Mengambil log aktivitas dari user di divisi ini
+  const recentActivities = await db
+    .select({
+      id: activityLogs.id,
+      userName: users.name,
+      notes: activityLogs.notes,
+      createdAt: activityLogs.createdAt,
+      prokerTitle: prokers.title,
+    })
+    .from(activityLogs)
+    .leftJoin(users, eq(activityLogs.createdBy, users.id))
+    .leftJoin(prokers, eq(activityLogs.prokerId, prokers.id))
+    .where(eq(users.divisionId, divisionId))
+    .orderBy(desc(activityLogs.createdAt))
+    .limit(5);
+
+  return {
+    kpi: {
+      published: Number(contentPublished[0].count),
+      pending: Number(contentPending[0].count),
+      partners: Number(activePartners[0].count),
+      prokers: Number(activeProkers[0].count),
+    },
+    alerts,
+    activities: recentActivities,
+  };
+}
+
+// ACTION: GET MEMBERS (Untuk halaman /dashboard/members)
+export async function getMembersWithLastLog(divisionId: number) {
+  // Ambil semua member divisi ini
+  const members = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      status: users.status,
+    })
+    .from(users)
+    .where(eq(users.divisionId, divisionId));
+
+  // Untuk setiap member, ambil log terakhirnya (N+1 problem tapi simple utk MVP)
+  // Idealnya pakai subquery/window function kalau data besar
+  const membersWithLog = await Promise.all(
+    members.map(async (m) => {
+      const lastLog = await db
+        .select({
+          createdAt: activityLogs.createdAt,
+          notes: activityLogs.notes,
+        })
+        .from(activityLogs)
+        .where(eq(activityLogs.createdBy, m.id))
+        .orderBy(desc(activityLogs.createdAt))
+        .limit(1);
+
+      return {
+        ...m,
+        lastActivity: lastLog[0] || null,
+      };
+    }),
+  );
+
+  return membersWithLog;
+}
+
+// ACTION: UPDATE MEMBER STATUS
+export async function updateMemberStatus(userId: string, status: string) {
+  await db.update(users).set({ status }).where(eq(users.id, userId));
+  return { success: true };
 }

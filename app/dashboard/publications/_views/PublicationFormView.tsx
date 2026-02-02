@@ -35,7 +35,7 @@ const Toast = ({
   return (
     <div
       className={cn(
-        "fixed top-5 right-5 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border animate-in slide-in-from-right duration-300 bg-white",
+        "fixed top-5 right-5 z-100 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border animate-in slide-in-from-right duration-300 bg-white",
         type === "success"
           ? "border-green-200 text-green-700"
           : "border-red-200 text-red-700",
