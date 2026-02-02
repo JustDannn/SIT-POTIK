@@ -74,7 +74,12 @@ export const serviceTypeEnum = pgEnum("service_type", [
   "instalasi_software",
   "lainnya",
 ]);
-
+export const programStatusEnum = pgEnum("program_status", [
+  "planned",
+  "ongoing",
+  "completed",
+  "canceled",
+]);
 export const roles = pgTable("roles", {
   id: serial("role_id").primaryKey(),
   roleName: text("role_name").notNull(), // Anggota, Ketua, dll.
@@ -302,7 +307,29 @@ export const guestBooks = pgTable("guest_books", {
   visitDate: timestamp("visit_date").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+export const programs = pgTable("programs", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  location: text("location"), // Zoom / Aula X
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  divisionId: integer("division_id").references(() => divisions.id),
+  status: programStatusEnum("status").default("planned"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
+// TABEL PARTISIPAN (Siapa PIC, Siapa Anggota di Event ini)
+// memungkinkan 1 Event punya banyak PIC, dan PIC bisa beda-beda tiap event.
+export const programParticipants = pgTable("program_participants", {
+  id: serial("id").primaryKey(),
+  programId: integer("program_id").references(() => programs.id, {
+    onDelete: "cascade",
+  }),
+  userId: uuid("user_id").references(() => users.id),
+  role: text("role").notNull(), // 'PIC', 'Anggota', 'Notulen'
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
 export const guestBooksRelations = relations(guestBooks, ({ one }) => ({
   officer: one(users, {
     fields: [guestBooks.servedBy],

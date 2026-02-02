@@ -14,6 +14,8 @@ import {
   partners,
   activityLogs,
   divisions,
+  programs,
+  programParticipants,
 } from "@/db/schema";
 import { eq, sql, desc, and, ne, count, gte, lt, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -469,5 +471,124 @@ export async function getMembersWithLastLog(divisionId: number) {
 // ACTION: UPDATE MEMBER STATUS
 export async function updateMemberStatus(userId: string, status: string) {
   await db.update(users).set({ status }).where(eq(users.id, userId));
+  return { success: true };
+}
+
+export async function getEducationDashboardData(divisionId: number) {
+  const now = new Date();
+
+  // KPI: Event Aktif (Ongoing)
+  const activeEvents = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(programs)
+    .where(
+      and(eq(programs.divisionId, divisionId), eq(programs.status, "ongoing")),
+    );
+
+  // KPI: Event Selesai Bulan Ini
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const completedMonth = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(programs)
+    .where(
+      and(
+        eq(programs.divisionId, divisionId),
+        eq(programs.status, "completed"),
+        gte(programs.endDate, startOfMonth),
+      ),
+    );
+
+  // KPI: Total Peserta (Unik)
+  // Menghitung berapa banyak orang yang pernah ikut event
+  const totalParticipants = await db
+    .select({
+      count: sql<number>`count(distinct ${programParticipants.userId})`,
+    })
+    .from(programParticipants)
+    .leftJoin(programs, eq(programParticipants.programId, programs.id))
+    .where(eq(programs.divisionId, divisionId));
+
+  // (Ini query agak advance, untuk MVP kita cari event completed 30 hari terakhir aja dulu)
+  const recentCompletedEvents = await db
+    .select({
+      id: programs.id,
+      title: programs.title,
+      endDate: programs.endDate,
+    })
+    .from(programs)
+    .where(
+      and(
+        eq(programs.divisionId, divisionId),
+        eq(programs.status, "completed"),
+      ),
+    )
+    .limit(5);
+
+  // Note: Nanti bisa ditambah logic cek ke tabel publications kalau field programId sudah ada
+
+  // AGENDA MENDATANG (Upcoming)
+  const upcomingEvents = await db
+    .select({
+      id: programs.id,
+      title: programs.title,
+      startDate: programs.startDate,
+      location: programs.location,
+      status: programs.status,
+    })
+    .from(programs)
+    .where(
+      and(
+        eq(programs.divisionId, divisionId),
+        gte(programs.startDate, now), // Start date > now
+      ),
+    )
+    .orderBy(desc(programs.startDate))
+    .limit(5);
+
+  return {
+    activeEvents: Number(activeEvents[0].count),
+    completedMonth: Number(completedMonth[0].count),
+    totalParticipants: Number(totalParticipants[0].count),
+    pendingImpacts: 0, // Placeholder sblm ada relasi impact
+    alerts: recentCompletedEvents.map((e) => ({
+      id: e.id,
+      message: `Event "${e.title}" selesai. Segera buat Impact Story!`,
+    })),
+    upcomingEvents,
+  };
+}
+
+// Create Event Baru
+export async function createEvent(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // Ambil Division ID User
+  const userProfile = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+  });
+
+  if (!userProfile?.divisionId) return { error: "No Division" };
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const location = formData.get("location") as string;
+  const startDate = new Date(formData.get("startDate") as string);
+  const endDate = new Date(formData.get("endDate") as string);
+
+  await db.insert(programs).values({
+    title,
+    description,
+    location,
+    startDate,
+    endDate,
+    divisionId: userProfile.divisionId,
+    status: "planned",
+  });
+
+  revalidatePath("/dashboard/events");
   return { success: true };
 }

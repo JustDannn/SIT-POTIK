@@ -11,6 +11,9 @@ import {
   PieChart,
   Database,
   Share2,
+  GraduationCap,
+  Zap,
+  Calendar,
   PenTool,
   Building2,
   Users,
@@ -89,6 +92,18 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
       ];
     } else if (div.includes("layanan") || div.includes("data")) {
       divisionMenu = [];
+    } else if (div.includes("edukasi") || div.includes("pelatihan")) {
+      return [
+        ...baseMenu,
+        { title: "Program & Event", href: "/dashboard/events", icon: Calendar },
+        {
+          title: "Peserta & Alumni",
+          href: "/dashboard/participants",
+          icon: GraduationCap,
+        },
+        { title: "Impact Stories", href: "/dashboard/impacts", icon: Zap },
+        { title: "Laporan", href: "/dashboard/reports", icon: ScrollText },
+      ];
     }
 
     // Gabungkan semuanya

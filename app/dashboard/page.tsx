@@ -11,6 +11,8 @@ import KoordinatorRisetView from "./_views/KoordinatorRisetView";
 import TreasurerDashboard from "./_views/TreasurerDashboard";
 import LayananDataDashboard from "./_views/LayananDataDashboard";
 import PrSdmDashboardView from "./_views/PrSdmDashboardView";
+import EducationDashboardView from "./_views/EducationDashboardView";
+
 // import AnggotaView from "./_views/AnggotaView";
 
 // IMPORT ACTIONS
@@ -23,6 +25,7 @@ import {
   getTreasurerDashboardData,
   getLayananDataStats,
   getPrSdmDashboardData,
+  getEducationDashboardData,
 } from "./actions";
 
 export default async function DashboardPage() {
@@ -97,7 +100,20 @@ export default async function DashboardPage() {
       const PrSdm = await getPrSdmDashboardData(userProfile.divisionId);
       return <PrSdmDashboardView user={userProfile} data={PrSdm} />;
     }
-    //KOORDINATOR LAIN (Media, SDM, dll - Coming Soon)
+    if (
+      divisionName.includes("edukasi") ||
+      divisionName.includes("pelatihan")
+    ) {
+      if (!userProfile.divisionId)
+        return <div>Error: Divisi belum di-assign.</div>;
+
+      // Ambil statistik khusus Edukasi dan Pelatihan
+      const educationData = await getEducationDashboardData(
+        userProfile.divisionId,
+      );
+      return <EducationDashboardView user={userProfile} data={educationData} />;
+    }
+    //KOORDINATOR LAIN (Media, dll - Coming Soon)
     return (
       <div className="p-10 text-center border border-dashed rounded-xl m-8">
         <h2 className="text-xl font-bold text-gray-700">
