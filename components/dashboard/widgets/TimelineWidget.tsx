@@ -57,7 +57,7 @@ export default function TimelineWidget() {
       {/* Timeline Container */}
       <div className="relative w-full overflow-x-auto pb-4">
         {/* Grid Background (7 Hari) */}
-        <div className="grid grid-cols-7 gap-4 min-w-[600px] text-xs text-gray-400 mb-4 text-center border-b border-gray-100 pb-2">
+        <div className="grid grid-cols-7 gap-4 min-w-150 text-xs text-gray-400 mb-4 text-center border-b border-gray-100 pb-2">
           <div>07 Nov</div>
           <div>08 Nov</div>
           <div>09 Nov</div>
@@ -73,7 +73,7 @@ export default function TimelineWidget() {
         </div>
 
         {/* Events Bars */}
-        <div className="relative grid grid-cols-7 gap-4 min-w-[600px] h-32 z-10">
+        <div className="relative grid grid-cols-7 gap-4 min-w-150 h-32 z-10">
           {events.map((event) => (
             <div
               key={event.id}

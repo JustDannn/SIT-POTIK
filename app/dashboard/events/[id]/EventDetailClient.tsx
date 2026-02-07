@@ -8,7 +8,13 @@ import EventTeam from "./_tabs/EventTeam";
 import EventLogs from "./_tabs/EventLogs";
 import EventImpact from "./_tabs/EventImpact";
 
-export default function EventDetailClient({ event, userRole }: { event: any; userRole: string }) {
+export default function EventDetailClient({
+  event,
+  userRole,
+}: {
+  event: any;
+  userRole: string;
+}) {
   const [activeTab, setActiveTab] = useState("overview");
 
   const tabs = [
@@ -66,15 +72,25 @@ export default function EventDetailClient({ event, userRole }: { event: any; use
       </div>
 
       <div className="min-h-100">
-        {activeTab === "overview" && <EventOverview event={event} userRole={userRole} />}
+        {activeTab === "overview" && (
+          <EventOverview event={event} userRole={userRole} />
+        )}
         {activeTab === "team" && (
-          <EventTeam eventId={event.id} participants={event.participants} />
+          <EventTeam
+            eventId={event.id}
+            divisionId={event.divisionId}
+            participants={event.participants}
+          />
         )}
         {activeTab === "logs" && (
           <EventLogs eventId={event.id} logs={event.logs} />
         )}
         {activeTab === "impact" && (
-          <EventImpact eventId={event.id} impacts={event.impacts} />
+          <EventImpact
+            eventId={event.id}
+            divisionId={event.divisionId}
+            impacts={event.impacts}
+          />
         )}
       </div>
     </div>

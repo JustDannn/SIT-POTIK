@@ -95,6 +95,7 @@ export const users = pgTable("users", {
   id: uuid("user_id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  image: text("image"),
   roleId: integer("role_id")
     .references(() => roles.id)
     .notNull(),
@@ -261,10 +262,11 @@ export const publications = pgTable("publications", {
   content: text("content"),
   fileUrl: text("file_url"),
   thumbnailUrl: text("thumbnail_url"),
-  category: text("category").notNull(), // 'Artikel', 'Infografis', 'Paper'
+  category: text("category").notNull(), // 'Artikel', 'Infografis', 'Paper', 'Impact'
   status: text("status").default("draft"),
   authorId: uuid("author_id").references(() => users.id),
   divisionId: integer("division_id").references(() => divisions.id),
+  programId: integer("program_id").references(() => programs.id), // Nullable — link ke event/program
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at")
@@ -345,6 +347,11 @@ export const publicationsRelations = relations(publications, ({ one }) => ({
   division: one(divisions, {
     fields: [publications.divisionId],
     references: [divisions.id],
+  }),
+
+  program: one(programs, {
+    fields: [publications.programId],
+    references: [programs.id],
   }),
 }));
 
