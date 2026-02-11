@@ -1,0 +1,20 @@
+CREATE TABLE "division_pages" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"division_slug" text NOT NULL,
+	"badge_text" text NOT NULL,
+	"badge_class_name" text NOT NULL,
+	"title_first_line" text NOT NULL,
+	"title_highlight_text" text NOT NULL,
+	"title_highlight_class_name" text NOT NULL,
+	"description" text NOT NULL,
+	"image_src" text NOT NULL,
+	"image_alt" text NOT NULL,
+	"image_card_color" text NOT NULL,
+	"image_blob_color" text NOT NULL,
+	"image_rotation" text DEFAULT 'left',
+	"buttons" text NOT NULL,
+	"floating_icons" text NOT NULL,
+	"additional_content" text,
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "division_pages_division_slug_unique" UNIQUE("division_slug")
+);

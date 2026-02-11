@@ -1,12 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { Users, FileText, Image as ImageIcon, Activity } from "lucide-react";
+import {
+  Users,
+  FileText,
+  Image as ImageIcon,
+  Activity,
+  CheckSquare,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import EventOverview from "./_tabs/EventOverview";
 import EventTeam from "./_tabs/EventTeam";
 import EventLogs from "./_tabs/EventLogs";
 import EventImpact from "./_tabs/EventImpact";
+import EventTasks from "./_tabs/EventTasks";
 
 export default function EventDetailClient({
   event,
@@ -20,6 +27,7 @@ export default function EventDetailClient({
   const tabs = [
     { id: "overview", label: "Overview", icon: FileText },
     { id: "team", label: "Tim & PIC", icon: Users },
+    { id: "tasks", label: "Tasks", icon: CheckSquare },
     { id: "logs", label: "Log Aktivitas", icon: Activity },
     { id: "impact", label: "Impact & Output", icon: ImageIcon },
   ];
@@ -80,6 +88,13 @@ export default function EventDetailClient({
             eventId={event.id}
             divisionId={event.divisionId}
             participants={event.participants}
+          />
+        )}
+        {activeTab === "tasks" && (
+          <EventTasks
+            eventId={event.id}
+            tasks={event.tasks || []}
+            participants={event.participants || []}
           />
         )}
         {activeTab === "logs" && (

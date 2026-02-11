@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   PenTool,
   Image as ImageIcon,
@@ -15,16 +16,27 @@ import {
 import { cn } from "@/lib/utils";
 import { deleteImpactStory } from "../../actions";
 
+interface ImpactItem {
+  id: number;
+  title: string;
+  content: string | null;
+  thumbnailUrl: string | null;
+  fileUrl: string | null;
+  status: string;
+  slug: string;
+  authorName: string | null;
+  createdAt: string | null;
+}
+
 export default function EventImpact({
   eventId,
-  divisionId,
   impacts: initialImpacts = [],
 }: {
   eventId: number;
   divisionId: number;
-  impacts: any[];
+  impacts: ImpactItem[];
 }) {
-  const [impacts, setImpacts] = useState(initialImpacts);
+  const [impacts, setImpacts] = useState<ImpactItem[]>(initialImpacts);
   const [isPending, startTransition] = useTransition();
 
   function handleDelete(impactId: number) {
@@ -32,7 +44,7 @@ export default function EventImpact({
     startTransition(async () => {
       const result = await deleteImpactStory(impactId, eventId);
       if (result.success) {
-        setImpacts((prev) => prev.filter((i: any) => i.id !== impactId));
+        setImpacts((prev) => prev.filter((i) => i.id !== impactId));
       }
     });
   }
@@ -88,7 +100,7 @@ export default function EventImpact({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {impacts.map((imp: any) => (
+          {impacts.map((imp) => (
             <div
               key={imp.id}
               className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all"
@@ -96,9 +108,10 @@ export default function EventImpact({
               {/* Thumbnail */}
               <div className="h-44 bg-gray-100 relative overflow-hidden">
                 {imp.thumbnailUrl || imp.fileUrl ? (
-                  <img
-                    src={imp.thumbnailUrl || imp.fileUrl}
+                  <Image
+                    src={imp.thumbnailUrl || imp.fileUrl || ""}
                     alt={imp.title}
+                    fill
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (

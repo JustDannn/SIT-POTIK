@@ -7,10 +7,30 @@ import {
   users,
   divisions,
   publications,
+  activityLogs,
+  tasks,
 } from "@/db/schema";
 import { eq, and, desc, ilike } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+
+// --- HELPER: FORMAT TANGGAL INDONESIA ---
+const formatDate = (date: Date | string) => {
+  return new Date(date).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+  });
+};
+
+// --- HELPER: CATAT LOG OTOMATIS ---
+async function logActivity(eventId: number, userId: string, message: string) {
+  await db.insert(activityLogs).values({
+    prokerId: eventId,
+    createdBy: userId,
+    notes: message,
+    logDate: new Date(),
+  });
+}
 
 // GET ALL EVENTS FOR A DIVISION
 export async function getEventsList(divisionId: number, query: string = "") {
@@ -103,6 +123,39 @@ export async function getEventById(eventId: number) {
     )
     .orderBy(desc(publications.createdAt));
 
+  // Fetch Tasks
+  const eventTasks = await db
+    .select({
+      id: tasks.id,
+      prokerId: tasks.prokerId,
+      programId: tasks.programId,
+      title: tasks.title,
+      description: tasks.description,
+      assignedUserId: tasks.assignedUserId,
+      assignedUserName: users.name,
+      status: tasks.status,
+      deadline: tasks.deadline,
+      createdAt: tasks.createdAt,
+      updatedAt: tasks.updatedAt,
+    })
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assignedUserId, users.id))
+    .where(eq(tasks.programId, eventId))
+    .orderBy(desc(tasks.createdAt));
+
+  // Fetch Activity Logs
+  const logs = await db
+    .select({
+      id: activityLogs.id,
+      notes: activityLogs.notes,
+      logDate: activityLogs.logDate,
+      userName: users.name,
+    })
+    .from(activityLogs)
+    .leftJoin(users, eq(activityLogs.createdBy, users.id))
+    .where(eq(activityLogs.prokerId, eventId))
+    .orderBy(desc(activityLogs.logDate));
+
   return {
     ...event,
     startDate: event.startDate.toISOString(),
@@ -113,7 +166,18 @@ export async function getEventById(eventId: number) {
       ...p,
       joinedAt: p.joinedAt ? p.joinedAt.toISOString() : null,
     })),
-    logs: [],
+    logs: logs.map((l) => ({
+      id: l.id,
+      notes: l.notes,
+      userName: l.userName || "Unknown",
+      createdAt: l.logDate ? l.logDate.toISOString() : new Date().toISOString(),
+    })),
+    tasks: eventTasks.map((t) => ({
+      ...t,
+      deadline: t.deadline ? t.deadline.toISOString() : null,
+      createdAt: t.createdAt ? t.createdAt.toISOString() : null,
+      updatedAt: t.updatedAt ? t.updatedAt.toISOString() : null,
+    })),
     impacts: impacts.map((i) => ({
       ...i,
       createdAt: i.createdAt ? i.createdAt.toISOString() : null,
@@ -190,10 +254,21 @@ export async function createEvent(formData: FormData) {
 
 // UPDATE EVENT STATUS
 export async function updateEventStatus(eventId: number, status: string) {
+  const validStatuses = [
+    "completed",
+    "ongoing",
+    "planned",
+    "canceled",
+  ] as const;
+
+  if (!validStatuses.includes(status as (typeof validStatuses)[number])) {
+    return { error: "Status tidak valid" };
+  }
+
   try {
     await db
       .update(programs)
-      .set({ status: status as any })
+      .set({ status: status as (typeof validStatuses)[number] })
       .where(eq(programs.id, eventId));
 
     revalidatePath("/dashboard/events");
@@ -376,6 +451,24 @@ export async function deleteImpactStory(impactId: number, eventId: number) {
   }
 }
 
+// ADD EVENT LOG (manual dari form)
+export async function addEventLog(eventId: number, note: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    await logActivity(eventId, user.id, note);
+    revalidatePath(`/dashboard/events/${eventId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Add Log Error:", error);
+    return { error: "Gagal menyimpan log aktivitas." };
+  }
+}
+
 // GET DIVISION MEMBERS (for member picker in CreateEventDialog)
 export async function getDivisionMembers(divisionId: number) {
   return await db
@@ -386,4 +479,118 @@ export async function getDivisionMembers(divisionId: number) {
     })
     .from(users)
     .where(eq(users.divisionId, divisionId));
+}
+
+// CREATE EVENT TASK + LOG
+export async function addEventTask(
+  eventId: number,
+  title: string,
+  deadline?: string,
+  assigneeId?: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    await db.insert(tasks).values({
+      programId: eventId,
+      title: title,
+      status: "todo",
+      deadline: deadline ? new Date(deadline) : null,
+      assignedUserId: assigneeId || null,
+    });
+
+    // Build log message
+    let logMessage = `Menambahkan task: "${title}"`;
+    if (assigneeId) {
+      const assignee = await db.query.users.findFirst({
+        where: eq(users.id, assigneeId),
+        columns: { name: true },
+      });
+      if (assignee) {
+        logMessage += ` → Ditugaskan ke ${assignee.name}`;
+      }
+    }
+    if (deadline) {
+      logMessage += ` (Deadline: ${formatDate(deadline)})`;
+    }
+
+    await logActivity(eventId, user.id, logMessage);
+
+    revalidatePath(`/dashboard/events/${eventId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Add Task Error:", error);
+    return { error: "Gagal membuat task" };
+  }
+}
+
+// TOGGLE TASK STATUS (Todo <-> Done) + LOG
+export async function toggleTaskStatus(taskId: number, currentStatus: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    const taskData = await db.query.tasks.findFirst({
+      where: eq(tasks.id, taskId),
+      columns: { title: true, programId: true },
+    });
+    if (!taskData || !taskData.programId) return { error: "Task not found" };
+
+    const newStatus = currentStatus === "done" ? "todo" : "done";
+
+    await db
+      .update(tasks)
+      .set({ status: newStatus as "todo" | "ongoing" | "done" })
+      .where(eq(tasks.id, taskId));
+
+    const actionWord =
+      newStatus === "done" ? "Menyelesaikan" : "Membuka kembali";
+    const logMessage = `${actionWord} task: "${taskData.title}"`;
+
+    await logActivity(taskData.programId, user.id, logMessage);
+
+    revalidatePath(`/dashboard/events/${taskData.programId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Toggle Task Error:", error);
+    return { error: "Gagal update status" };
+  }
+}
+
+// DELETE EVENT TASK + LOG
+export async function deleteEventTask(taskId: number) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    const taskData = await db.query.tasks.findFirst({
+      where: eq(tasks.id, taskId),
+      columns: { title: true, programId: true },
+    });
+    if (!taskData || !taskData.programId) return { error: "Task not found" };
+
+    await db.delete(tasks).where(eq(tasks.id, taskId));
+
+    await logActivity(
+      taskData.programId,
+      user.id,
+      `Menghapus task: "${taskData.title}"`,
+    );
+
+    revalidatePath(`/dashboard/events/${taskData.programId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Delete Task Error:", error);
+    return { error: "Gagal hapus task" };
+  }
 }

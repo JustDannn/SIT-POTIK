@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { db } from "@/db";
 import { publications } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
@@ -73,11 +74,12 @@ export default async function ImpactDetailPage({
         <article className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-4xl overflow-hidden shadow-xl shadow-gray-200/50">
           {/* Hero Image */}
           {(data.thumbnailUrl || data.fileUrl) && (
-            <div className="w-full max-h-112 overflow-hidden">
-              <img
+            <div className="w-full max-h-112 overflow-hidden relative h-96">
+              <Image
                 src={data.thumbnailUrl || data.fileUrl || ""}
                 alt={data.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import {
   X,
   Calendar,
@@ -51,21 +52,25 @@ export default function CreateEventDialog({
   const [attachment, setAttachment] = useState<File | null>(null);
   const memberDropdownRef = useRef<HTMLDivElement>(null);
 
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      location: "",
+      startDate: "",
+      startTime: "",
+      endDate: "",
+      endTime: "",
+    });
+    setSelectedMembers([]);
+    setAttachment(null);
+    setShowMemberSelect(false);
+  };
+
   // Reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        title: "",
-        description: "",
-        location: "",
-        startDate: "",
-        startTime: "",
-        endDate: "",
-        endTime: "",
-      });
-      setSelectedMembers([]);
-      setAttachment(null);
-      setShowMemberSelect(false);
+      Promise.resolve().then(() => resetForm());
     }
   }, [isOpen]);
 
@@ -302,10 +307,12 @@ export default function CreateEventDialog({
                           >
                             <div className="w-8 h-8 rounded-full bg-indigo-100 overflow-hidden shrink-0 flex items-center justify-center text-indigo-600 text-xs font-bold">
                               {member.image ? (
-                                <img
+                                <Image
                                   src={member.image}
                                   alt={member.name}
                                   className="w-full h-full object-cover"
+                                  width={32}
+                                  height={32}
                                 />
                               ) : (
                                 member.name?.charAt(0).toUpperCase()
@@ -334,10 +341,12 @@ export default function CreateEventDialog({
                     >
                       <div className="w-6 h-6 rounded-full bg-indigo-100 overflow-hidden flex items-center justify-center text-indigo-600 text-[10px] font-bold">
                         {m.image ? (
-                          <img
+                          <Image
                             src={m.image}
                             alt={m.name}
                             className="w-full h-full object-cover"
+                            width={24}
+                            height={24}
                           />
                         ) : (
                           m.name?.charAt(0).toUpperCase()

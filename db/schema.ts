@@ -124,9 +124,10 @@ export const prokers = pgTable("prokers", {
 
 export const tasks = pgTable("tasks", {
   id: serial("task_id").primaryKey(),
-  prokerId: integer("proker_id")
-    .references(() => prokers.id)
-    .notNull(),
+  prokerId: integer("proker_id").references(() => prokers.id),
+  programId: integer("program_id").references(() => programs.id, {
+    onDelete: "cascade",
+  }),
   title: text("title").notNull(),
   description: text("description"),
   assignedUserId: uuid("assigned_user_id").references(() => users.id),
@@ -420,6 +421,10 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   proker: one(prokers, {
     fields: [tasks.prokerId],
     references: [prokers.id],
+  }),
+  program: one(programs, {
+    fields: [tasks.programId],
+    references: [programs.id],
   }),
   assignedUser: one(users, {
     fields: [tasks.assignedUserId],

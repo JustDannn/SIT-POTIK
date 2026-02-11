@@ -476,6 +476,8 @@ export async function updateMemberStatus(userId: string, status: string) {
 
 export async function getEducationDashboardData(divisionId: number) {
   const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   // KPI: Event Aktif (Ongoing)
   const activeEvents = await db
@@ -486,7 +488,6 @@ export async function getEducationDashboardData(divisionId: number) {
     );
 
   // KPI: Event Selesai Bulan Ini
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const completedMonth = await db
     .select({ count: sql<number>`count(*)` })
     .from(programs)
@@ -494,12 +495,11 @@ export async function getEducationDashboardData(divisionId: number) {
       and(
         eq(programs.divisionId, divisionId),
         eq(programs.status, "completed"),
-        gte(programs.endDate, startOfMonth),
+        gte(programs.endDate, firstDayOfMonth),
       ),
     );
 
   // KPI: Total Peserta (Unik)
-  // Menghitung berapa banyak orang yang pernah ikut event
   const totalParticipants = await db
     .select({
       count: sql<number>`count(distinct ${programParticipants.userId})`,
@@ -508,53 +508,71 @@ export async function getEducationDashboardData(divisionId: number) {
     .leftJoin(programs, eq(programParticipants.programId, programs.id))
     .where(eq(programs.divisionId, divisionId));
 
-  // (Ini query agak advance, untuk MVP kita cari event completed 30 hari terakhir aja dulu)
-  const recentCompletedEvents = await db
+  // Fetch recent events for Gantt Chart (termasuk endDate)
+  const recentEvents = await db
     .select({
       id: programs.id,
       title: programs.title,
-      endDate: programs.endDate,
+      startDate: programs.startDate,
+      endDate: programs.endDate, // PENTING BUAT GANTT CHART
+      status: programs.status,
+      location: programs.location,
+      description: programs.description,
     })
+    .from(programs)
+    .where(eq(programs.divisionId, divisionId))
+    .orderBy(desc(programs.startDate))
+    .limit(20); // Ambil 20 event terakhir/mendatang
+
+  // Cek Pending Impact (Event selesai tapi belum ada report Impact)
+  const completedEvents = await db
+    .select({ id: programs.id, title: programs.title })
     .from(programs)
     .where(
       and(
         eq(programs.divisionId, divisionId),
         eq(programs.status, "completed"),
       ),
-    )
-    .limit(5);
+    );
 
-  // Note: Nanti bisa ditambah logic cek ke tabel publications kalau field programId sudah ada
+  let pendingImpactsCount = 0;
+  const alerts: { message: string }[] = [];
 
-  // AGENDA MENDATANG (Upcoming)
-  const upcomingEvents = await db
-    .select({
-      id: programs.id,
-      title: programs.title,
-      startDate: programs.startDate,
-      location: programs.location,
-      status: programs.status,
-    })
-    .from(programs)
-    .where(
-      and(
-        eq(programs.divisionId, divisionId),
-        gte(programs.startDate, now), // Start date > now
+  for (const ev of completedEvents) {
+    const impact = await db.query.publications.findFirst({
+      where: and(
+        eq(publications.programId, ev.id),
+        eq(publications.category, "Impact"),
       ),
-    )
-    .orderBy(desc(programs.startDate))
-    .limit(5);
+    });
+
+    if (!impact) {
+      pendingImpactsCount++;
+      alerts.push({
+        message: `Laporan Impact untuk "${ev.title}" belum dibuat.`,
+      });
+    }
+  }
+
+  // Tambah alert jika ada event ongoing
+  const ongoingEvents = recentEvents.filter((e) => e.status === "ongoing");
+  ongoingEvents.forEach((e) => {
+    alerts.unshift({ message: `Event "${e.title}" sedang berlangsung.` });
+  });
 
   return {
     activeEvents: Number(activeEvents[0].count),
     completedMonth: Number(completedMonth[0].count),
     totalParticipants: Number(totalParticipants[0].count),
-    pendingImpacts: 0, // Placeholder sblm ada relasi impact
-    alerts: recentCompletedEvents.map((e) => ({
-      id: e.id,
-      message: `Event "${e.title}" selesai. Segera buat Impact Story!`,
+    pendingImpacts: pendingImpactsCount,
+    alerts: alerts.slice(0, 5), // Ambil 5 alert teratas
+
+    // Mapping data agar sesuai interface EventItem di View (ISO String)
+    upcomingEvents: recentEvents.map((e) => ({
+      ...e,
+      startDate: e.startDate.toISOString(),
+      endDate: e.endDate ? e.endDate.toISOString() : null, // Handle null date
     })),
-    upcomingEvents,
   };
 }
 

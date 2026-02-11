@@ -3,15 +3,14 @@
 import React, { useState, useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight, MapPin, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface CalendarEvent {
+export interface CalendarEvent {
   id: number;
   title: string;
-  startDate: string;
-  endDate: string | null;
-  status: string;
+  startDate: string; // ISO String
+  endDate: string | null; // Bisa null
+  status: string | null;
   location: string | null;
-  description: string | null;
+  description?: string | null;
 }
 
 const STATUS_BAR: Record<
@@ -25,16 +24,16 @@ const STATUS_BAR: Record<
     dot: "bg-indigo-500",
   },
   ongoing: {
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/30",
-    text: "text-emerald-700",
-    dot: "bg-emerald-500",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/30",
+    text: "text-orange-700",
+    dot: "bg-orange-500",
   },
   completed: {
-    bg: "bg-gray-400/10",
-    border: "border-gray-400/30",
-    text: "text-gray-500",
-    dot: "bg-gray-400",
+    bg: "bg-green-500/10",
+    border: "border-green-500/30",
+    text: "text-green-700",
+    dot: "bg-green-500",
   },
   canceled: {
     bg: "bg-red-500/10",
@@ -74,7 +73,11 @@ function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
+export default function EventCalendar({
+  events = [],
+}: {
+  events?: CalendarEvent[];
+}) {
   const today = startOfDay(new Date());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -104,9 +107,12 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
   };
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthStart = useMemo(
+    () => new Date(currentYear, currentMonth, 1),
+    [currentYear, currentMonth],
+  );
 
-  // Days header array
+  // Generate Header Hari (1, 2, 3...)
   const days = useMemo(() => {
     return Array.from({ length: daysInMonth }, (_, i) => {
       const d = new Date(currentYear, currentMonth, i + 1);
@@ -122,7 +128,7 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
     });
   }, [currentYear, currentMonth, daysInMonth, today]);
 
-  // Filter & sort events that overlap this month
+  // Filter Event agar hanya muncul yang di bulan ini
   const visibleEvents = useMemo(() => {
     const monthEnd = new Date(
       currentYear,
@@ -132,20 +138,27 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
       59,
       59,
     );
+
     return events
       .map((ev) => {
+        // Konversi string ISO ke Date Object
         const evStart = startOfDay(new Date(ev.startDate));
-        const evEnd = ev.endDate ? startOfDay(new Date(ev.endDate)) : evStart; // single-day event if no endDate
+        // Jika endDate null, anggap selesai di hari yang sama
+        const evEnd = ev.endDate ? startOfDay(new Date(ev.endDate)) : evStart;
+
         return { ...ev, _start: evStart, _end: evEnd };
       })
-      .filter((ev) => ev._end >= monthStart && ev._start <= monthEnd)
+      .filter((ev) => {
+        // Cek overlap: Start event <= End Month DAN End Event >= Start Month
+        return ev._start <= monthEnd && ev._end >= monthStart;
+      })
       .sort((a, b) => a._start.getTime() - b._start.getTime());
   }, [events, currentYear, currentMonth, daysInMonth, monthStart]);
 
-  // Column width
-  const colW = 44; // px per day
+  // Lebar kolom per hari (pixel)
+  const colW = 44;
 
-  // Compute today marker position
+  // Posisi garis "Hari Ini"
   const todayOffset = useMemo(() => {
     if (
       today.getMonth() !== currentMonth ||
@@ -156,51 +169,51 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
   }, [today, currentMonth, currentYear, colW]);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-3xl shadow-sm flex flex-col h-full overflow-hidden">
       {/* HEADER */}
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-900">
             {MONTH_NAMES[currentMonth]} {currentYear}
           </h2>
-          <p className="text-gray-400 text-sm mt-0.5">
+          <p className="text-gray-400 text-xs mt-0.5">
             {visibleEvents.length} kegiatan bulan ini
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={goToPrev}
-            className="p-2 hover:bg-gray-100 rounded-full border border-gray-200 transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-full border border-gray-200 transition-colors"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={16} />
           </button>
           <button
             onClick={goToToday}
-            className="px-4 py-2 hover:bg-gray-100 rounded-lg border border-gray-200 text-sm font-bold transition-colors"
+            className="px-3 py-1 hover:bg-gray-100 rounded-lg border border-gray-200 text-xs font-bold transition-colors"
           >
             Hari Ini
           </button>
           <button
             onClick={goToNext}
-            className="p-2 hover:bg-gray-100 rounded-full border border-gray-200 transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-full border border-gray-200 transition-colors"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
-      {/* GANTT BODY */}
-      <div className="overflow-x-auto" ref={scrollRef}>
-        <div style={{ minWidth: daysInMonth * colW + 200 }}>
-          {/* TIMELINE HEADER */}
+      {/* GANTT BODY (Scrollable) */}
+      <div className="overflow-x-auto flex-1 custom-scrollbar" ref={scrollRef}>
+        <div style={{ minWidth: daysInMonth * colW + 200, paddingBottom: 20 }}>
+          {/* TIMELINE HEADER (Sticky) */}
           <div className="flex border-b border-gray-100 sticky top-0 bg-white z-10">
-            {/* Event label column */}
-            <div className="w-50 shrink-0 px-4 py-3 border-r border-gray-100">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            {/* Kolom Label Kiri */}
+            <div className="w-48 shrink-0 px-4 py-3 border-r border-gray-100 bg-white sticky left-0 z-20 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                 Kegiatan
               </span>
             </div>
-            {/* Day columns */}
+            {/* Kolom Hari */}
             <div className="flex relative">
               {days.map((d) => (
                 <div
@@ -213,7 +226,7 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
                 >
                   <span
                     className={cn(
-                      "text-[10px] font-medium uppercase",
+                      "text-[9px] font-medium uppercase",
                       d.isToday ? "text-indigo-600" : "text-gray-400",
                     )}
                   >
@@ -221,7 +234,7 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
                   </span>
                   <span
                     className={cn(
-                      "text-xs font-bold mt-0.5 w-6 h-6 flex items-center justify-center rounded-full",
+                      "text-[10px] font-bold mt-0.5 w-5 h-5 flex items-center justify-center rounded-full",
                       d.isToday ? "bg-indigo-600 text-white" : "text-gray-600",
                     )}
                   >
@@ -234,14 +247,15 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
 
           {/* EVENT ROWS */}
           {visibleEvents.length === 0 ? (
-            <div className="flex items-center justify-center py-20 text-gray-400 text-sm">
-              Tidak ada kegiatan di bulan ini
+            <div className="flex items-center justify-center py-20 text-gray-400 text-sm italic">
+              Tidak ada kegiatan di periode ini.
             </div>
           ) : (
             visibleEvents.map((ev) => {
-              const style = STATUS_BAR[ev.status] || STATUS_BAR.planned;
+              const style =
+                STATUS_BAR[ev.status ?? "planned"] || STATUS_BAR.planned;
 
-              // Clamp to month boundaries
+              // Hitung Posisi Bar (Clamping ke batas bulan)
               const barStart = ev._start < monthStart ? monthStart : ev._start;
               const monthEndDate = new Date(
                 currentYear,
@@ -251,29 +265,35 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
               const barEnd = ev._end > monthEndDate ? monthEndDate : ev._end;
 
               const offsetDays = daysBetween(monthStart, barStart);
-              const spanDays = daysBetween(barStart, barEnd) + 1; // inclusive
+              const spanDays = daysBetween(barStart, barEnd) + 1;
 
               const leftPx = offsetDays * colW;
-              const widthPx = spanDays * colW - 4; // small gap
+              const widthPx = spanDays * colW - 6; // -6 px gap kanan
 
               const startTime = new Date(ev.startDate).toLocaleTimeString(
                 "id-ID",
-                { hour: "2-digit", minute: "2-digit" },
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
               );
 
               return (
                 <div
                   key={ev.id}
-                  className="flex border-b border-gray-50 hover:bg-gray-50/40 transition-colors group"
+                  className="flex border-b border-gray-50 hover:bg-gray-50/40 transition-colors group relative"
                 >
-                  {/* Event label */}
-                  <div className="w-50 shrink-0 px-4 py-3 border-r border-gray-100 flex flex-col justify-center min-h-14">
-                    <span className="text-sm font-bold text-gray-800 truncate leading-tight">
+                  {/* Event Label (Sticky Left) */}
+                  <div className="w-48 shrink-0 px-4 py-3 border-r border-gray-100 flex flex-col justify-center min-h-15 bg-white sticky left-0 z-10 group-hover:bg-gray-50/40">
+                    <span
+                      className="text-sm font-bold text-gray-800 truncate leading-tight"
+                      title={ev.title}
+                    >
                       {ev.title}
                     </span>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-1">
                       {ev.location && (
-                        <span className="text-[10px] text-gray-400 flex items-center gap-0.5 truncate">
+                        <span className="text-[10px] text-gray-400 flex items-center gap-0.5 truncate max-w-20">
                           <MapPin size={10} />
                           {ev.location}
                         </span>
@@ -285,15 +305,15 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
                     </div>
                   </div>
 
-                  {/* Bar area */}
-                  <div className="relative flex-1" style={{ height: 56 }}>
-                    {/* Weekend stripes */}
+                  {/* Gantt Bar Area */}
+                  <div className="relative flex-1" style={{ height: 60 }}>
+                    {/* Weekend Backgrounds */}
                     {days.map(
                       (d) =>
                         d.isWeekend && (
                           <div
                             key={d.num}
-                            className="absolute top-0 bottom-0 bg-gray-50/60"
+                            className="absolute top-0 bottom-0 bg-gray-50/60 pointer-events-none"
                             style={{
                               left: (d.num - 1) * colW,
                               width: colW,
@@ -302,10 +322,10 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
                         ),
                     )}
 
-                    {/* Today marker */}
+                    {/* Today Line Marker */}
                     {todayOffset !== null && (
                       <div
-                        className="absolute top-0 bottom-0 w-px bg-indigo-400/40 z-1"
+                        className="absolute top-0 bottom-0 w-px bg-indigo-500/50 z-1"
                         style={{ left: todayOffset }}
                       />
                     )}
@@ -313,15 +333,15 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
                     {/* THE BAR */}
                     <div
                       className={cn(
-                        "absolute top-2.5 h-8 rounded-lg border flex items-center px-2.5 gap-1.5 cursor-default transition-shadow hover:shadow-md z-2",
+                        "absolute top-1/2 -translate-y-1/2 h-8 rounded-lg border flex items-center px-2.5 gap-1.5 cursor-pointer transition-all hover:shadow-md hover:h-9 z-2",
                         style.bg,
                         style.border,
                       )}
                       style={{
-                        left: leftPx + 2,
-                        width: Math.max(widthPx, 28),
+                        left: leftPx + 3, // +3px gap kiri
+                        width: Math.max(widthPx, 38), // Min width biar bar kelihatan
                       }}
-                      title={`${ev.title}\n${ev.location || ""}\n${ev.status}`}
+                      title={`${ev.title}\nStatus: ${ev.status}\nLokasi: ${ev.location || "-"}`}
                     >
                       <div
                         className={cn(
@@ -332,7 +352,8 @@ export default function EventCalendar({ events }: { events: CalendarEvent[] }) {
                       <span
                         className={cn("text-xs font-bold truncate", style.text)}
                       >
-                        {widthPx > 80 ? ev.title : ""}
+                        {/* Tampilkan judul di dalam bar jika barnya cukup lebar */}
+                        {widthPx > 100 ? ev.title : ""}
                       </span>
                     </div>
                   </div>

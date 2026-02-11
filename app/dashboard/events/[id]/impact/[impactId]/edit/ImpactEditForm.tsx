@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -14,7 +15,15 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { updateImpactStory } from "../../../../actions";
+import RichTextEditor from "@/components/RichTextEditor";
 
+type Impact = {
+  id: number;
+  title: string | null;
+  content: string | null;
+  thumbnailUrl: string | null;
+  fileUrl: string | null;
+};
 export default function ImpactEditForm({
   eventId,
   eventTitle,
@@ -22,7 +31,7 @@ export default function ImpactEditForm({
 }: {
   eventId: number;
   eventTitle: string;
-  impact: any;
+  impact: Impact;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -134,8 +143,8 @@ export default function ImpactEditForm({
 
       router.push(`/dashboard/events/${eventId}`);
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
@@ -181,9 +190,11 @@ export default function ImpactEditForm({
 
           {thumbnailPreview ? (
             <div className="relative rounded-2xl overflow-hidden border border-gray-200">
-              <img
+              <Image
                 src={thumbnailPreview}
                 alt="Thumbnail preview"
+                width={800}
+                height={256}
                 className="w-full h-64 object-cover"
               />
               <button
@@ -233,15 +244,13 @@ export default function ImpactEditForm({
           <label className="block text-sm font-bold text-gray-700 mb-3">
             Konten / Cerita
           </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Ceritakan kegiatan, dampak, dan output yang dihasilkan dari event ini..."
-            rows={16}
-            className="w-full px-4 py-3 text-sm leading-relaxed border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 outline-none transition-all resize-y min-h-48"
+          <RichTextEditor
+            content={content}
+            onChange={(html) => setContent(html)}
           />
           <p className="text-xs text-gray-400 mt-2">
-            Teks akan ditampilkan apa adanya di halaman publik.
+            Gunakan toolbar di atas untuk memformat teks (Bold, Italic, Heading,
+            dll).
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { LucideIcon } from "lucide-react";
 import { DM_Serif_Display } from "next/font/google";
@@ -141,9 +142,11 @@ export default function HeroSection({
               imageRotationClass,
             )}
           >
-            <img
+            <Image
               src={image.src}
               alt={image.alt}
+              width={400}
+              height={400}
               className="scale-120 object-contain drop-shadow-2xl"
             />
           </motion.div>

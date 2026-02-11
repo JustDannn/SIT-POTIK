@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 import EventsListView from "../_views/EventsListView";
 import EventsGalleryView from "../_views/EventsGalleryView";
+import EventsKanbanView from "../_views/EventsKanbanView";
 import EventCalendar from "./EventCalendar";
 import CreateEventDialog from "./CreateEventDialog";
 import {
   LayoutList,
   LayoutGrid,
   GanttChart,
+  Kanban as KanbanIcon,
   CalendarPlus,
   Search,
   Clock,
@@ -22,9 +24,20 @@ interface Member {
   image: string | null;
 }
 
-type ViewMode = "list" | "gallery" | "timeline";
+interface EventItem {
+  id: number;
+  title: string;
+  startDate: string;
+  endDate: string | null;
+  status: string | null;
+  location: string | null;
+  description?: string | null;
+}
+
+type ViewMode = "list" | "gallery" | "timeline" | "kanban";
 
 const VIEW_TABS: { key: ViewMode; label: string; icon: React.ElementType }[] = [
+  { key: "kanban", label: "Kanban", icon: KanbanIcon },
   { key: "list", label: "List", icon: LayoutList },
   { key: "gallery", label: "Galeri", icon: LayoutGrid },
   { key: "timeline", label: "Timeline", icon: GanttChart },
@@ -34,11 +47,11 @@ export default function EventsClientWrapper({
   initialEvents,
   divisionMembers,
 }: {
-  initialEvents: any[];
+  initialEvents: EventItem[];
   divisionMembers: Member[];
 }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"upcoming" | "history">("upcoming");
 
@@ -47,7 +60,7 @@ export default function EventsClientWrapper({
     const matchesSearch = event.title
       .toLowerCase()
       .includes(search.toLowerCase());
-    const isHistory = ["completed", "canceled"].includes(event.status);
+    const isHistory = ["completed", "canceled"].includes(event.status ?? "");
     return filter === "upcoming"
       ? matchesSearch && !isHistory
       : matchesSearch && isHistory;
@@ -94,7 +107,7 @@ export default function EventsClientWrapper({
         </div>
 
         {/* Search (middle, expands) — hidden in timeline mode */}
-        {viewMode !== "timeline" && (
+        {viewMode !== "timeline" && viewMode !== "kanban" && (
           <>
             <div className="relative flex-1 w-full md:w-auto">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -141,6 +154,9 @@ export default function EventsClientWrapper({
       </div>
 
       {/* CONTENT */}
+      {viewMode === "kanban" && (
+        <EventsKanbanView initialEvents={initialEvents} />
+      )}
       {viewMode === "list" && <EventsListView events={filteredEvents} />}
       {viewMode === "gallery" && <EventsGalleryView events={filteredEvents} />}
       {viewMode === "timeline" && <EventCalendar events={initialEvents} />}

@@ -5,7 +5,15 @@ import Link from "next/link";
 import { MapPin, ArrowRight, Clock, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function EventsListView({ events }: { events: any[] }) {
+interface Event {
+  id: number;
+  title: string;
+  startDate: string;
+  location?: string | null;
+  status: string | null;
+}
+
+export default function EventsListView({ events }: { events: Event[] }) {
   if (events.length === 0) {
     return (
       <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl">

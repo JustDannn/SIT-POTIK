@@ -18,6 +18,20 @@ import {
   removeParticipant,
 } from "../../actions";
 
+interface Participant {
+  id: number;
+  userId: string;
+  userName: string | null;
+  role: string;
+  joinedAt: string;
+  user?: { name: string };
+}
+
+interface Member {
+  id: string;
+  name: string | null;
+}
+
 export default function EventTeam({
   eventId,
   divisionId,
@@ -25,32 +39,40 @@ export default function EventTeam({
 }: {
   eventId: number;
   divisionId: number;
-  participants: any[];
+  participants: Participant[];
 }) {
-  const [participants, setParticipants] = useState(initialParticipants);
+  const [participants, setParticipants] =
+    useState<Participant[]>(initialParticipants);
   const [showModal, setShowModal] = useState(false);
-  const [allMembers, setAllMembers] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<
     { userId: string; role: string }[]
   >([]);
   const [isPending, startTransition] = useTransition();
-  const [loadingMembers, setLoadingMembers] = useState(false);
+  // Use null to distinguish "not loaded yet" from "loaded but empty"
+  const [allMembers, setAllMembers] = useState<Member[] | null>(null);
+  const loadingMembers = showModal && allMembers === null;
 
   // Fetch division members when modal opens
   useEffect(() => {
-    if (showModal && allMembers.length === 0) {
-      setLoadingMembers(true);
-      getDivisionMembers(divisionId).then((members) => {
+    if (!showModal || allMembers !== null) return;
+
+    let cancelled = false;
+
+    getDivisionMembers(divisionId).then((members) => {
+      if (!cancelled) {
         setAllMembers(members);
-        setLoadingMembers(false);
-      });
-    }
-  }, [showModal, divisionId, allMembers.length]);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showModal, divisionId, allMembers]);
 
   // Filter out already-assigned members
-  const existingUserIds = participants.map((p: any) => p.userId);
-  const availableMembers = allMembers.filter(
+  const existingUserIds = participants.map((p) => p.userId);
+  const availableMembers = (allMembers ?? []).filter(
     (m) =>
       !existingUserIds.includes(m.id) &&
       !selectedMembers.some((s) => s.userId === m.id),
@@ -81,7 +103,7 @@ export default function EventTeam({
       }
       // Refresh: add new members to local state
       const newParticipants = selectedMembers.map((m) => {
-        const memberInfo = allMembers.find((a) => a.id === m.userId);
+        const memberInfo = (allMembers ?? []).find((a) => a.id === m.userId);
         return {
           id: Date.now() + Math.random(), // temp id
           userId: m.userId,
@@ -90,7 +112,7 @@ export default function EventTeam({
           joinedAt: new Date().toISOString(),
         };
       });
-      setParticipants((prev: any[]) => [...prev, ...newParticipants]);
+      setParticipants((prev) => [...prev, ...newParticipants]);
       setSelectedMembers([]);
       setSearch("");
       setShowModal(false);
@@ -101,16 +123,14 @@ export default function EventTeam({
     startTransition(async () => {
       const result = await removeParticipant(participantId);
       if (result.success) {
-        setParticipants((prev: any[]) =>
-          prev.filter((p) => p.id !== participantId),
-        );
+        setParticipants((prev) => prev.filter((p) => p.id !== participantId));
       }
     });
   }
 
   // Separate PIC and Anggota
-  const pics = participants.filter((p: any) => p.role === "PIC");
-  const anggota = participants.filter((p: any) => p.role !== "PIC");
+  const pics = participants.filter((p) => p.role === "PIC");
+  const anggota = participants.filter((p) => p.role !== "PIC");
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -136,7 +156,7 @@ export default function EventTeam({
             <span>PIC Utama</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pics.map((p: any) => (
+            {pics.map((p) => (
               <MemberCard
                 key={p.id}
                 participant={p}
@@ -164,7 +184,7 @@ export default function EventTeam({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {anggota.map((p: any) => (
+            {anggota.map((p) => (
               <MemberCard
                 key={p.id}
                 participant={p}
@@ -238,7 +258,9 @@ export default function EventTeam({
                 </p>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {selectedMembers.map((s) => {
-                    const member = allMembers.find((m) => m.id === s.userId);
+                    const member = (allMembers ?? []).find(
+                      (m) => m.id === s.userId,
+                    );
                     return (
                       <div
                         key={s.userId}
@@ -343,13 +365,12 @@ export default function EventTeam({
   );
 }
 
-/* ===== MEMBER CARD COMPONENT ===== */
 function MemberCard({
   participant,
   onRemove,
   isPending,
 }: {
-  participant: any;
+  participant: Participant;
   onRemove: () => void;
   isPending: boolean;
 }) {

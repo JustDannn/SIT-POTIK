@@ -6,23 +6,31 @@ import AttentionWidget from "@/components/dashboard/widgets/AttentionWidget";
 import TimelineWidget from "@/components/dashboard/widgets/TimelineWidget";
 import { Filter, Calendar as CalendarIcon } from "lucide-react";
 
+interface User {
+  id: string;
+  name: string | null;
+  email: string | null;
+}
+
+interface AttentionItem {
+  id: string | number;
+  title: string;
+  subtitle: string;
+  link: string;
+  type: "proker" | "laporan" | "lpj";
+}
+
 interface KetuaViewProps {
-  user: any;
+  user: User;
   stats: {
     active: number;
     completed: number;
     pendingReports: number;
     pendingLPJ: number;
   };
-  timeline: any[];
-  attention: any[];
+  attention: AttentionItem[];
 }
-export default function KetuaView({
-  user,
-  stats,
-  timeline,
-  attention,
-}: KetuaViewProps) {
+export default function KetuaView({ user, stats, attention }: KetuaViewProps) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const monthName = now.toLocaleDateString("id-ID", { month: "short" });
@@ -67,8 +75,8 @@ export default function KetuaView({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Timeline & Aktivitas */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Widget Timeline (Sekarang nerima data prop) */}
-          <TimelineWidget {...({ data: timeline } as any)} />
+          {/* Widget Timeline */}
+          <TimelineWidget />
 
           {/* Widget Aktivitas (Placeholder) */}
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm min-h-50">
