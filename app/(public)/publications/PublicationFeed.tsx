@@ -138,6 +138,7 @@ export default function PublicationFeed({
                     <Image
                       src={item.thumbnailUrl}
                       alt={item.title}
+                      fill
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
                     />
                   ) : (

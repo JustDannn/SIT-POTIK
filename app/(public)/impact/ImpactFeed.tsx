@@ -155,8 +155,12 @@ export default function ImpactFeed({
                   </Link>
 
                   <p className="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3 flex-1">
-                    {/* Hilangkan karakter markdown biar bersih */}
-                    {item.content?.replace(/[#*`]/g, "") ||
+                    {item.excerpt ||
+                      item.content
+                        ?.replace(/<[^>]*>/g, "")
+                        .replace(/&nbsp;/g, " ")
+                        .replace(/[#*`]/g, "")
+                        .trim() ||
                       "Lihat dokumentasi lengkap kegiatan ini..."}
                   </p>
 

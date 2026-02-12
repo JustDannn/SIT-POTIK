@@ -179,10 +179,6 @@ export default function MeetPageClient({ team, cms }: MeetPageClientProps) {
 
       {/* ─── Team Grid ─── */}
       <TeamSection dosen={team.dosen} agent={team.agent} />
-
-      <div className="mt-20">
-        <SquigglyLine />
-      </div>
     </main>
   );
 }
