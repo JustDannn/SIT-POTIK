@@ -18,6 +18,10 @@ import {
   Building2,
   Users,
   ScrollText,
+  Globe,
+  FolderOpen,
+  Palette,
+  MessageSquare,
 } from "lucide-react";
 
 export const getMenuForUser = (role?: string, divisionName?: string) => {
@@ -64,8 +68,31 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     }
     // Divisi Media & Branding
     else if (div.includes("media") || div.includes("branding")) {
-      divisionMenu = [
-        { title: "Content Plan", href: "/dashboard/content", icon: PenTool },
+      return [
+        ...baseMenu,
+        { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 },
+        { title: "CMS Website", href: "/dashboard/media/cms", icon: Globe },
+        {
+          title: "Asset Repository",
+          href: "/dashboard/media/repository",
+          icon: FolderOpen,
+        },
+        {
+          title: "Campaigns",
+          href: "/dashboard/media/campaigns",
+          icon: Calendar,
+        },
+        {
+          title: "Brand Kit",
+          href: "/dashboard/media/brand-kit",
+          icon: Palette,
+        },
+        {
+          title: "Design Requests",
+          href: "/dashboard/media/requests",
+          icon: MessageSquare,
+        },
+        { title: "Laporan", href: "/dashboard/reports", icon: ScrollText },
       ];
     }
     // Divisi pr & sdm

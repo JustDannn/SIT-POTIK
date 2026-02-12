@@ -16,8 +16,22 @@ import {
   divisions,
   programs,
   programParticipants,
+  designRequests,
+  mediaAssets,
+  campaigns,
 } from "@/db/schema";
-import { eq, sql, desc, and, ne, count, gte, lt, isNull } from "drizzle-orm";
+import {
+  eq,
+  sql,
+  desc,
+  and,
+  ne,
+  count,
+  gte,
+  lt,
+  isNull,
+  inArray,
+} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
@@ -289,7 +303,11 @@ export async function addGuestEntry(formData: FormData) {
   const name = formData.get("name") as string;
   const institution = formData.get("institution") as string;
   const phone = formData.get("phone") as string;
-  const serviceType = formData.get("serviceType") as any;
+  const serviceType = formData.get("serviceType") as
+    | "permintaan_data"
+    | "konsultasi"
+    | "instalasi_software"
+    | "lainnya";
   const needs = formData.get("needs") as string;
 
   try {
@@ -362,11 +380,8 @@ export async function getPrSdmDashboardData(divisionId: number) {
       and(eq(prokers.divisionId, divisionId), eq(prokers.status, "active")),
     );
 
-  // 2. ALERTS & ATTENTION NEEDED
-  let alerts: { type: string; message: string }[] = [];
-
-  // Alert 1: Konten Pending Review lama
-  // (Logic simplifikasi: Ambil semua yang pending)
+  // ALERTS & ATTENTION NEEDED
+  const alerts: { type: string; message: string }[] = [];
   const pendingContents = await db
     .select({ title: publications.title })
     .from(publications)
@@ -609,4 +624,103 @@ export async function createEvent(formData: FormData) {
 
   revalidatePath("/dashboard/events");
   return { success: true };
+}
+
+// ==========================================
+// MEDIA & BRANDING DASHBOARD
+// ==========================================
+export async function getMediaDashboardData() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // --- KPI STATS ---
+  // Content Velocity: publications created this month
+  const monthlyContent = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(publications)
+    .where(gte(publications.createdAt, startOfMonth));
+
+  // Pending Queue: design requests not completed
+  const pendingRequests = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(designRequests)
+    .where(
+      inArray(designRequests.status, ["pending", "in_progress", "review"]),
+    );
+
+  // Total Assets in DAM
+  const totalAssets = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(mediaAssets);
+
+  // Scheduled Posts (campaigns that are scheduled but not yet published)
+  const scheduledPosts = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(campaigns)
+    .where(eq(campaigns.status, "scheduled"));
+
+  // --- INCOMING DESIGN REQUESTS (newest pending/in_progress) ---
+  const incomingRequests = await db.query.designRequests.findMany({
+    where: inArray(designRequests.status, ["pending", "in_progress"]),
+    orderBy: [desc(designRequests.createdAt)],
+    limit: 5,
+    with: {
+      requester: true,
+      requesterDivision: true,
+    },
+  });
+
+  // --- PENDING PUBLICATIONS (draft/review) ---
+  const pendingPublications = await db.query.publications.findMany({
+    where: inArray(publications.status, ["draft", "review"]),
+    orderBy: [desc(publications.createdAt)],
+    limit: 5,
+    with: {
+      author: true,
+      division: true,
+    },
+  });
+
+  // --- UPCOMING CAMPAIGNS (scheduled + draft, nearest first) ---
+  const upcomingCampaigns = await db.query.campaigns.findMany({
+    where: inArray(campaigns.status, ["draft", "scheduled"]),
+    orderBy: [desc(campaigns.scheduledDate)],
+    limit: 6,
+  });
+
+  return {
+    stats: {
+      contentVelocity: Number(monthlyContent[0].count),
+      pendingQueue: Number(pendingRequests[0].count),
+      totalAssets: Number(totalAssets[0].count),
+      scheduledPosts: Number(scheduledPosts[0].count),
+    },
+    incomingRequests: incomingRequests.map((r) => ({
+      id: r.id,
+      title: r.title,
+      status: r.status,
+      priority: r.priority,
+      deadline: r.deadline,
+      createdAt: r.createdAt,
+      requester: r.requester ? { name: r.requester.name } : null,
+      requesterDivision: r.requesterDivision
+        ? { divisionName: r.requesterDivision.divisionName }
+        : null,
+    })),
+    pendingPublications: pendingPublications.map((p) => ({
+      id: p.id,
+      title: p.title,
+      category: p.category,
+      status: p.status,
+      author: p.author ? { name: p.author.name } : null,
+      division: p.division ? { divisionName: p.division.divisionName } : null,
+    })),
+    upcomingCampaigns: upcomingCampaigns.map((c) => ({
+      id: c.id,
+      title: c.title,
+      platform: c.platform,
+      status: c.status,
+      scheduledDate: c.scheduledDate,
+    })),
+  };
 }

@@ -5,12 +5,68 @@ import {
   timestamp,
   boolean,
   uuid,
-  date,
   integer,
   pgEnum,
   decimal,
+  bigint,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+// MEDIA & BRANDING ENUMS
+export const designRequestStatusEnum = pgEnum("design_request_status", [
+  "pending",
+  "in_progress",
+  "review",
+  "completed",
+  "rejected",
+]);
+
+export const designRequestPriorityEnum = pgEnum("design_request_priority", [
+  "low",
+  "normal",
+  "high",
+  "urgent",
+]);
+
+export const mediaAssetTypeEnum = pgEnum("media_asset_type", [
+  "image",
+  "video",
+  "document",
+  "audio",
+]);
+
+export const brandKitCategoryEnum = pgEnum("brand_kit_category", [
+  "logo",
+  "font",
+  "template",
+  "guideline",
+  "color_palette",
+  "icon",
+]);
+
+export const campaignStatusEnum = pgEnum("campaign_status", [
+  "draft",
+  "scheduled",
+  "published",
+  "archived",
+]);
+
+export const campaignPlatformEnum = pgEnum("campaign_platform", [
+  "instagram",
+  "tiktok",
+  "linkedin",
+  "website",
+  "twitter",
+  "youtube",
+]);
+
+export const siteConfigTypeEnum = pgEnum("site_config_type", [
+  "text",
+  "image",
+  "rich_text",
+  "link",
+  "json",
+]);
 
 export const prokerStatusEnum = pgEnum("proker_status", [
   "created",
@@ -462,5 +518,197 @@ export const lpjsRelations = relations(lpjs, ({ one }) => ({
   uploader: one(users, {
     fields: [lpjs.uploadedBy],
     references: [users.id],
+  }),
+}));
+
+// MEDIA & BRANDING ECOSYSTEM TABLES
+
+// 1. CMS Site Configuration (Key-Value Store for Dynamic Website Content)
+export const siteConfig = pgTable("site_config", {
+  id: serial("id").primaryKey(),
+  section: text("section").notNull(), // e.g., 'home_hero', 'about', 'footer', 'contact'
+  key: text("key").notNull(), // e.g., 'title', 'subtitle', 'cta_link', 'background_image'
+  value: text("value").notNull(), // The actual text or image URL
+  type: siteConfigTypeEnum("type").default("text"),
+  label: text("label"), // Human-readable label for the CMS UI
+  description: text("description"), // Helper text for editors
+  sortOrder: integer("sort_order").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: uuid("updated_by").references(() => users.id),
+});
+
+// 2. Design & Publication Requests (Collaboration Ticket System)
+export const designRequests = pgTable("design_requests", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"), // What do they need?
+  requesterDivisionId: integer("requester_division_id").references(
+    () => divisions.id,
+  ),
+  requesterId: uuid("requester_id").references(() => users.id),
+  assignedTo: uuid("assigned_to").references(() => users.id), // Assigned designer from Media team
+  status: designRequestStatusEnum("status").default("pending"),
+  priority: designRequestPriorityEnum("priority").default("normal"),
+  deadline: timestamp("deadline"),
+  attachmentUrl: text("attachment_url"), // Reference docs/drafts
+  deliverableUrl: text("deliverable_url"), // Final designed asset
+  notes: text("notes"), // Internal notes for designers
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// 3. Design Request Comments (Communication Thread)
+export const designRequestComments = pgTable("design_request_comments", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id")
+    .references(() => designRequests.id, { onDelete: "cascade" })
+    .notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  content: text("content").notNull(),
+  attachmentUrl: text("attachment_url"), // For revision files
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// 4. Media Assets (Digital Asset Management - DAM)
+export const mediaAssets = pgTable("media_assets", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  url: text("url").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  size: bigint("size", { mode: "number" }), // in bytes
+  type: mediaAssetTypeEnum("type").notNull(),
+  mimeType: text("mime_type"),
+  folder: text("folder").default("general"), // e.g., 'Event A', 'Event B', 'general'
+  tags: text("tags"), // Comma-separated or JSON array for searchability
+  programId: integer("program_id").references(() => programs.id), // Linked to specific event
+  divisionId: integer("division_id").references(() => divisions.id),
+  uploadedBy: uuid("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// 5. Brand Kits (Official Assets)
+export const brandKits = pgTable("brand_kits", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // e.g., 'Official Logo Primary', 'Typography Guide'
+  category: brandKitCategoryEnum("category").notNull(),
+  fileUrl: text("file_url").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  description: text("description"),
+  version: text("version").default("1.0"), // Track versions of brand assets
+  isActive: boolean("is_active").default(true), // Soft delete / archive
+  uploadedBy: uuid("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// 6. Campaigns (Social Media & Website Publication Planning)
+export const campaigns = pgTable("campaigns", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  platform: campaignPlatformEnum("platform").notNull(),
+  status: campaignStatusEnum("status").default("draft"),
+  scheduledDate: timestamp("scheduled_date"),
+  publishedDate: timestamp("published_date"),
+  caption: text("caption"),
+  content: text("content"), // Rich text for website content
+  assetUrl: text("asset_url"), // Main visual
+  additionalAssets: text("additional_assets"), // JSON array of additional images/videos
+  externalLink: text("external_link"), // Link to live post
+  picId: uuid("pic_id").references(() => users.id), // Person in charge (Media team)
+  programId: integer("program_id").references(() => programs.id), // Related event/program
+  designRequestId: integer("design_request_id").references(
+    () => designRequests.id,
+  ), // If created from a request
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// MEDIA & BRANDING RELATIONS
+
+export const siteConfigRelations = relations(siteConfig, ({ one }) => ({
+  editor: one(users, {
+    fields: [siteConfig.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const designRequestsRelations = relations(
+  designRequests,
+  ({ one, many }) => ({
+    requester: one(users, {
+      fields: [designRequests.requesterId],
+      references: [users.id],
+      relationName: "requester",
+    }),
+    assignee: one(users, {
+      fields: [designRequests.assignedTo],
+      references: [users.id],
+      relationName: "assignee",
+    }),
+    requesterDivision: one(divisions, {
+      fields: [designRequests.requesterDivisionId],
+      references: [divisions.id],
+    }),
+    comments: many(designRequestComments),
+  }),
+);
+
+export const designRequestCommentsRelations = relations(
+  designRequestComments,
+  ({ one }) => ({
+    request: one(designRequests, {
+      fields: [designRequestComments.requestId],
+      references: [designRequests.id],
+    }),
+    user: one(users, {
+      fields: [designRequestComments.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const mediaAssetsRelations = relations(mediaAssets, ({ one }) => ({
+  program: one(programs, {
+    fields: [mediaAssets.programId],
+    references: [programs.id],
+  }),
+  division: one(divisions, {
+    fields: [mediaAssets.divisionId],
+    references: [divisions.id],
+  }),
+  uploader: one(users, {
+    fields: [mediaAssets.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+export const brandKitsRelations = relations(brandKits, ({ one }) => ({
+  uploader: one(users, {
+    fields: [brandKits.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+export const campaignsRelations = relations(campaigns, ({ one }) => ({
+  pic: one(users, {
+    fields: [campaigns.picId],
+    references: [users.id],
+  }),
+  program: one(programs, {
+    fields: [campaigns.programId],
+    references: [programs.id],
+  }),
+  designRequest: one(designRequests, {
+    fields: [campaigns.designRequestId],
+    references: [designRequests.id],
   }),
 }));

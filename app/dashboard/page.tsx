@@ -12,6 +12,7 @@ import TreasurerDashboard from "./_views/TreasurerDashboard";
 import LayananDataDashboard from "./_views/LayananDataDashboard";
 import PrSdmDashboardView from "./_views/PrSdmDashboardView";
 import EducationDashboardView from "./_views/EducationDashboardView";
+import MediaDashboardView from "./_views/MediaDashboardView";
 
 // import AnggotaView from "./_views/AnggotaView";
 
@@ -26,6 +27,7 @@ import {
   getLayananDataStats,
   getPrSdmDashboardData,
   getEducationDashboardData,
+  getMediaDashboardData,
 } from "./actions";
 import { getDivisionMembers } from "./events/actions";
 
@@ -116,7 +118,27 @@ export default async function DashboardPage() {
         />
       );
     }
-    //KOORDINATOR LAIN (Media, dll - Coming Soon)
+    if (divisionName.includes("media") || divisionName.includes("branding")) {
+      if (!userProfile.divisionId)
+        return <div>Error: Divisi belum di-assign.</div>;
+
+      const mediaData = await getMediaDashboardData();
+      return (
+        <MediaDashboardView
+          user={{
+            name: userProfile.name,
+            division: userProfile.division
+              ? { divisionName: userProfile.division.divisionName }
+              : null,
+          }}
+          stats={mediaData.stats}
+          incomingRequests={mediaData.incomingRequests}
+          pendingPublications={mediaData.pendingPublications}
+          upcomingCampaigns={mediaData.upcomingCampaigns}
+        />
+      );
+    }
+    //KOORDINATOR LAIN (Coming Soon)
     return (
       <div className="p-10 text-center border border-dashed rounded-xl m-8">
         <h2 className="text-xl font-bold text-gray-700">
