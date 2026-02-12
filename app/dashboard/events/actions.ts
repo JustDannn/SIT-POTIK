@@ -335,6 +335,7 @@ export async function createImpactStory(eventId: number, formData: FormData) {
   const content = formData.get("content") as string;
   const fileUrl = formData.get("fileUrl") as string;
   const thumbnailUrl = formData.get("thumbnailUrl") as string;
+  const status = (formData.get("status") as string) || "published";
 
   if (!title) return { error: "Judul wajib diisi" };
 
@@ -354,11 +355,11 @@ export async function createImpactStory(eventId: number, formData: FormData) {
       fileUrl: fileUrl || null,
       thumbnailUrl: thumbnailUrl || null,
       category: "Impact",
-      status: "published",
+      status,
       authorId: user.id,
       divisionId: userProfile.divisionId,
       programId: eventId,
-      publishedAt: new Date(),
+      publishedAt: status === "published" ? new Date() : null,
     });
 
     revalidatePath(`/dashboard/events/${eventId}`);
@@ -407,6 +408,7 @@ export async function updateImpactStory(
   const content = formData.get("content") as string;
   const fileUrl = formData.get("fileUrl") as string;
   const thumbnailUrl = formData.get("thumbnailUrl") as string;
+  const status = (formData.get("status") as string) || "published";
 
   if (!title) return { error: "Judul wajib diisi" };
 
@@ -427,6 +429,8 @@ export async function updateImpactStory(
         content,
         fileUrl: fileUrl || null,
         thumbnailUrl: thumbnailUrl || null,
+        status,
+        publishedAt: status === "published" ? new Date() : null,
       })
       .where(eq(publications.id, impactId));
 

@@ -12,11 +12,38 @@ import {
   Loader2,
   UploadCloud,
   Upload,
+  Eye,
+  EyeOff,
+  Send,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { createImpactStory } from "../../../actions";
 import RichTextEditor from "@/components/RichTextEditor";
 import { cn } from "@/lib/utils";
+
+const STATUS_OPTIONS = [
+  {
+    value: "draft",
+    label: "Draft",
+    icon: EyeOff,
+    color: "bg-gray-100 text-gray-700 border-gray-300",
+    activeColor: "bg-gray-600 text-white border-gray-600",
+  },
+  {
+    value: "review",
+    label: "Review",
+    icon: Eye,
+    color: "bg-orange-50 text-orange-700 border-orange-200",
+    activeColor: "bg-orange-500 text-white border-orange-500",
+  },
+  {
+    value: "published",
+    label: "Published",
+    icon: Send,
+    color: "bg-green-50 text-green-700 border-green-200",
+    activeColor: "bg-green-600 text-white border-green-600",
+  },
+];
 
 export default function ImpactCreateForm({
   eventId,
@@ -31,6 +58,7 @@ export default function ImpactCreateForm({
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [content, setContent] = useState("");
+  const [status, setStatus] = useState("published");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,6 +145,7 @@ export default function ImpactCreateForm({
       formData.set("content", content);
       formData.set("thumbnailUrl", thumbnailUrl || "");
       formData.set("fileUrl", fileUrl || "");
+      formData.set("status", status);
 
       const result = await createImpactStory(eventId, formData);
 
@@ -171,7 +200,7 @@ export default function ImpactCreateForm({
             ) : (
               <Save size={18} />
             )}
-            Publish
+            {status === "published" ? "Publish" : "Simpan"}
           </button>
         </div>
       </div>
@@ -231,6 +260,33 @@ export default function ImpactCreateForm({
             <p className="text-xs text-gray-400 mt-2">
               Konten akan otomatis terpublikasi di halaman Impact & Stories.
             </p>
+          </div>
+
+          {/* Status Card */}
+          <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm">
+            <label className="text-sm font-bold text-gray-900 mb-3 block">
+              Status Publikasi
+            </label>
+            <div className="space-y-2">
+              {STATUS_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isActive = status === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStatus(opt.value)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm font-bold transition-all",
+                      isActive ? opt.activeColor : opt.color,
+                    )}
+                  >
+                    <Icon size={16} />
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Thumbnail Upload Card */}

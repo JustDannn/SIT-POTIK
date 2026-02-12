@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
   Calendar as CalendarIcon,
 } from "lucide-react";
 import EventCalendar from "../events/_components/EventCalendar";
+import CreateEventDialog from "../events/_components/CreateEventDialog";
 
 interface Division {
   divisionName: string;
@@ -21,20 +22,26 @@ interface Division {
 
 interface User {
   name: string;
-  division: Division;
+  division: Division | null;
 }
 interface EventItem {
   id: number;
   title: string;
   startDate: string;
-  endDate: string | null; // Wajib ada
-  status: string;
+  endDate: string | null;
+  status: string | null;
   location: string | null;
   description?: string | null;
 }
 
 interface AlertItem {
   message: string;
+}
+
+interface Member {
+  id: string;
+  name: string;
+  image?: string | null;
 }
 
 interface DashboardData {
@@ -49,37 +56,41 @@ interface DashboardData {
 export default function EducationDashboardView({
   user,
   data,
+  divisionMembers,
 }: {
   user: User;
   data: DashboardData;
+  divisionMembers: Member[];
 }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   return (
     <div className="space-y-8 pb-20">
       {/* --- HEADER --- */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-gray-100 pb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Halo, {user.name} 👋
+            Halo, {user.name}!
           </h1>
           <p className="text-gray-500 mt-1">
             Koordinator Divisi{" "}
             <span className="font-semibold text-indigo-600">
-              {user.division.divisionName}
+              {user.division?.divisionName}
             </span>
           </p>
         </div>
 
         {/* SHORTCUTS */}
         <div className="flex flex-wrap gap-3">
-          <Link
-            href="/dashboard/events"
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold transition-all shadow-lg shadow-indigo-200 hover:-translate-y-0.5"
+          <button
+            onClick={() => setIsDialogOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 text-sm font-bold transition-all shadow-lg shadow-indigo-200 hover:-translate-y-0.5 cursor-pointer"
           >
             <CalendarPlus size={18} />
             Buat Event
-          </Link>
+          </button>
           <Link
-            href="/dashboard/content/create?category=Impact"
+            href="/dashboard/impacts/create"
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-bold transition-colors hover:border-gray-300"
           >
             <PenTool size={18} />
@@ -199,6 +210,13 @@ export default function EducationDashboardView({
           </div>
         </div>
       </div>
+
+      {/* CREATE EVENT MODAL */}
+      <CreateEventDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        divisionMembers={divisionMembers}
+      />
     </div>
   );
 }

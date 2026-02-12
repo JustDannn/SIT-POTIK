@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,12 +12,13 @@ import {
   Loader2,
   UploadCloud,
   Upload,
+  Zap,
   Eye,
   EyeOff,
   Send,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { updateImpactStory } from "../../../../actions";
+import { createStandaloneImpactStory } from "../../actions";
 import RichTextEditor from "@/components/RichTextEditor";
 import { cn } from "@/lib/utils";
 
@@ -45,63 +46,51 @@ const STATUS_OPTIONS = [
   },
 ];
 
-type Impact = {
-  id: number;
-  title: string | null;
-  content: string | null;
-  thumbnailUrl: string | null;
-  fileUrl: string | null;
-  status: string | null;
-};
-
-export default function ImpactEditForm({
-  eventId,
-  eventTitle,
-  impact,
-}: {
-  eventId: number;
-  eventTitle: string;
-  impact: Impact;
-}) {
+export default function StandaloneImpactForm() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [title, setTitle] = useState(impact.title || "");
-  const [content, setContent] = useState(impact.content || "");
-  const [status, setStatus] = useState(impact.status || "draft");
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [content, setContent] = useState("");
+  const [status, setStatus] = useState("published");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Thumbnail
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
-    impact.thumbnailUrl || null,
-  );
-  const [thumbnailChanged, setThumbnailChanged] = useState(false);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
-  // Attachment file
+  // Attachment file (PDF, docs, etc.)
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
-  const [existingFileUrl] = useState<string | null>(impact.fileUrl || null);
-  const [attachmentChanged, setAttachmentChanged] = useState(false);
+
+  // Auto-Generate Slug
+  useEffect(() => {
+    if (title) {
+      const s = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .trim()
+        .replace(/\s+/g, "-");
+      setSlug(s);
+    }
+  }, [title]);
 
   function handleThumbnailChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setThumbnailFile(file);
     setThumbnailPreview(URL.createObjectURL(file));
-    setThumbnailChanged(true);
   }
 
   function handleAttachmentChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setAttachmentFile(file);
-    setAttachmentChanged(true);
   }
 
   function removeAttachment() {
     setAttachmentFile(null);
-    setAttachmentChanged(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -112,48 +101,40 @@ export default function ImpactEditForm({
     setError(null);
 
     try {
-      let thumbnailUrl: string | null = impact.thumbnailUrl || null;
-      let fileUrl: string | null = impact.fileUrl || null;
+      let thumbnailUrl: string | null = null;
+      let fileUrl: string | null = null;
 
-      // 1. Upload new thumbnail if changed
-      if (thumbnailChanged) {
-        if (thumbnailFile) {
-          const fileName = `impact-thumb-${Date.now()}-${thumbnailFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-          const { error: uploadErr } = await supabase.storage
-            .from("publications")
-            .upload(fileName, thumbnailFile);
-          if (uploadErr)
-            throw new Error("Gagal upload thumbnail: " + uploadErr.message);
+      // 1. Upload thumbnail to Supabase Storage
+      if (thumbnailFile) {
+        const fileName = `impact-thumb-${Date.now()}-${thumbnailFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("publications")
+          .upload(fileName, thumbnailFile);
+        if (uploadErr)
+          throw new Error("Gagal upload thumbnail: " + uploadErr.message);
 
-          const res = supabase.storage
-            .from("publications")
-            .getPublicUrl(fileName);
-          thumbnailUrl = res.data.publicUrl;
-        } else {
-          thumbnailUrl = null;
-        }
+        const res = supabase.storage
+          .from("publications")
+          .getPublicUrl(fileName);
+        thumbnailUrl = res.data.publicUrl;
       }
 
-      // 2. Upload new attachment if changed
-      if (attachmentChanged) {
-        if (attachmentFile) {
-          const fileName = `impact-file-${Date.now()}-${attachmentFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-          const { error: uploadErr } = await supabase.storage
-            .from("publications")
-            .upload(fileName, attachmentFile);
-          if (uploadErr)
-            throw new Error("Gagal upload file: " + uploadErr.message);
+      // 2. Upload attachment file
+      if (attachmentFile) {
+        const fileName = `impact-file-${Date.now()}-${attachmentFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+        const { error: uploadErr } = await supabase.storage
+          .from("publications")
+          .upload(fileName, attachmentFile);
+        if (uploadErr)
+          throw new Error("Gagal upload file: " + uploadErr.message);
 
-          const res = supabase.storage
-            .from("publications")
-            .getPublicUrl(fileName);
-          fileUrl = res.data.publicUrl;
-        } else {
-          fileUrl = null;
-        }
+        const res = supabase.storage
+          .from("publications")
+          .getPublicUrl(fileName);
+        fileUrl = res.data.publicUrl;
       }
 
-      // 3. Update via server action
+      // 3. Save to DB via server action
       const formData = new FormData();
       formData.set("title", title);
       formData.set("content", content);
@@ -161,16 +142,18 @@ export default function ImpactEditForm({
       formData.set("fileUrl", fileUrl || "");
       formData.set("status", status);
 
-      const result = await updateImpactStory(impact.id, eventId, formData);
+      const result = await createStandaloneImpactStory(formData);
 
       if (result.error) {
         throw new Error(result.error);
       }
 
-      router.push(`/dashboard/events/${eventId}`);
+      router.push("/dashboard/impacts");
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+      const errorMessage =
+        err instanceof Error ? err.message : "Terjadi kesalahan";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -182,21 +165,21 @@ export default function ImpactEditForm({
       <div className="sticky -top-8 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-200 -mx-4 px-4 pt-8 pb-4 md:-mx-8 md:px-8 mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href={`/dashboard/events/${eventId}`}
+            href="/dashboard/impacts"
             className="p-2 hover:bg-white rounded-full transition-colors text-gray-500"
           >
             <ArrowLeft size={20} />
           </Link>
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              Edit Impact Story
+              Tulis Impact Story
             </h1>
-            <p className="text-xs text-gray-500">Perbarui tulisanmu.</p>
+            <p className="text-xs text-gray-500">Standalone — tanpa event</p>
           </div>
         </div>
         <div className="flex gap-3">
           <Link
-            href={`/dashboard/events/${eventId}`}
+            href="/dashboard/impacts"
             className="hidden md:flex px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 items-center"
           >
             Batal
@@ -211,7 +194,7 @@ export default function ImpactEditForm({
             ) : (
               <Save size={18} />
             )}
-            Simpan Perubahan
+            {status === "published" ? "Publish" : "Simpan"}
           </button>
         </div>
       </div>
@@ -235,6 +218,14 @@ export default function ImpactEditForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
+            <div className="mt-2 text-xs text-gray-400 flex items-center gap-2">
+              <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono">
+                slug:
+              </span>
+              <span className="font-mono text-gray-500 truncate">
+                {slug || "..."}
+              </span>
+            </div>
           </div>
 
           {/* Rich Text Editor */}
@@ -250,16 +241,21 @@ export default function ImpactEditForm({
 
         {/* --- SIDEBAR SETTINGS --- */}
         <div className="space-y-6">
-          {/* Event Info Card */}
+          {/* Standalone Info Card */}
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm">
             <label className="text-sm font-bold text-gray-900 mb-3 block">
-              Terhubung ke Event
+              Tipe Cerita
             </label>
-            <div className="p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50">
-              <span className="font-bold text-sm text-indigo-700 line-clamp-2">
-                {eventTitle}
+            <div className="p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 flex items-center gap-3">
+              <Zap size={18} className="text-emerald-600 shrink-0" />
+              <span className="font-bold text-sm text-emerald-700">
+                Standalone Impact Story
               </span>
             </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Cerita ini tidak terhubung ke event manapun. Cocok untuk dampak
+              umum organisasi.
+            </p>
           </div>
 
           {/* Status Card */}
@@ -374,43 +370,6 @@ export default function ImpactEditForm({
                 >
                   <X size={14} className="text-red-500" />
                 </button>
-              </div>
-            ) : existingFileUrl && !attachmentChanged ? (
-              <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-3 py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <FileText size={18} className="text-green-500 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-900">
-                      File tersedia
-                    </p>
-                    <a
-                      href={existingFileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-indigo-600 hover:underline"
-                    >
-                      Lihat file
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <label className="px-2.5 py-1 text-[10px] font-bold text-indigo-600 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition-colors cursor-pointer">
-                    Ganti
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                      onChange={handleAttachmentChange}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={removeAttachment}
-                    className="p-1 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <X size={14} className="text-red-500" />
-                  </button>
-                </div>
               </div>
             ) : (
               <label className="flex items-center justify-center gap-2 h-16 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer">

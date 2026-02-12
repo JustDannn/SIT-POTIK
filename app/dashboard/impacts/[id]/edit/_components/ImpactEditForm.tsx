@@ -12,14 +12,25 @@ import {
   Loader2,
   UploadCloud,
   Upload,
+  Zap,
   Eye,
   EyeOff,
   Send,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { updateImpactStory } from "../../../../actions";
+import { updateStandaloneImpactStory } from "../../../actions";
 import RichTextEditor from "@/components/RichTextEditor";
 import { cn } from "@/lib/utils";
+
+type Impact = {
+  id: number;
+  title: string;
+  content: string | null;
+  thumbnailUrl: string | null;
+  fileUrl: string | null;
+  status: string | null;
+  programId: number | null;
+};
 
 const STATUS_OPTIONS = [
   {
@@ -45,24 +56,7 @@ const STATUS_OPTIONS = [
   },
 ];
 
-type Impact = {
-  id: number;
-  title: string | null;
-  content: string | null;
-  thumbnailUrl: string | null;
-  fileUrl: string | null;
-  status: string | null;
-};
-
-export default function ImpactEditForm({
-  eventId,
-  eventTitle,
-  impact,
-}: {
-  eventId: number;
-  eventTitle: string;
-  impact: Impact;
-}) {
+export default function ImpactEditForm({ impact }: { impact: Impact }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -161,13 +155,13 @@ export default function ImpactEditForm({
       formData.set("fileUrl", fileUrl || "");
       formData.set("status", status);
 
-      const result = await updateImpactStory(impact.id, eventId, formData);
+      const result = await updateStandaloneImpactStory(impact.id, formData);
 
       if (result.error) {
         throw new Error(result.error);
       }
 
-      router.push(`/dashboard/events/${eventId}`);
+      router.push("/dashboard/impacts");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");
@@ -182,7 +176,7 @@ export default function ImpactEditForm({
       <div className="sticky -top-8 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-200 -mx-4 px-4 pt-8 pb-4 md:-mx-8 md:px-8 mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href={`/dashboard/events/${eventId}`}
+            href="/dashboard/impacts"
             className="p-2 hover:bg-white rounded-full transition-colors text-gray-500"
           >
             <ArrowLeft size={20} />
@@ -191,12 +185,12 @@ export default function ImpactEditForm({
             <h1 className="text-xl font-bold text-gray-900">
               Edit Impact Story
             </h1>
-            <p className="text-xs text-gray-500">Perbarui tulisanmu.</p>
+            <p className="text-xs text-gray-500">Perbarui tulisanmu</p>
           </div>
         </div>
         <div className="flex gap-3">
           <Link
-            href={`/dashboard/events/${eventId}`}
+            href="/dashboard/impacts"
             className="hidden md:flex px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 items-center"
           >
             Batal
@@ -250,16 +244,25 @@ export default function ImpactEditForm({
 
         {/* --- SIDEBAR SETTINGS --- */}
         <div className="space-y-6">
-          {/* Event Info Card */}
+          {/* Type Info Card */}
           <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm">
             <label className="text-sm font-bold text-gray-900 mb-3 block">
-              Terhubung ke Event
+              Tipe Cerita
             </label>
-            <div className="p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50">
-              <span className="font-bold text-sm text-indigo-700 line-clamp-2">
-                {eventTitle}
-              </span>
-            </div>
+            {impact.programId ? (
+              <div className="p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50">
+                <span className="font-bold text-sm text-indigo-700">
+                  Terhubung ke Event
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 flex items-center gap-3">
+                <Zap size={18} className="text-emerald-600 shrink-0" />
+                <span className="font-bold text-sm text-emerald-700">
+                  Standalone Impact Story
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Status Card */}

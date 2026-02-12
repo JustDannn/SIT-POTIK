@@ -118,9 +118,10 @@ export default async function ImpactDetailPage({
 
           {/* Content Body */}
           <div className="p-8 md:p-12 lg:px-16 max-w-none">
-            <div className="prose prose-lg prose-indigo max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap font-serif">
-              {data.content}
-            </div>
+            <div
+              className="prose prose-lg prose-indigo max-w-none text-gray-700 leading-relaxed font-serif"
+              dangerouslySetInnerHTML={{ __html: data.content || "" }}
+            />
 
             {/* File attachment download */}
             {data.fileUrl && data.thumbnailUrl && (

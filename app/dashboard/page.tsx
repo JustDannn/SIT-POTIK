@@ -27,6 +27,7 @@ import {
   getPrSdmDashboardData,
   getEducationDashboardData,
 } from "./actions";
+import { getDivisionMembers } from "./events/actions";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -63,12 +64,7 @@ export default async function DashboardPage() {
     ]);
 
     return (
-      <KetuaView
-        user={userProfile}
-        stats={stats}
-        timeline={timelineData}
-        attention={attentionData}
-      />
+      <KetuaView user={userProfile} stats={stats} attention={attentionData} />
     );
   }
 
@@ -108,10 +104,17 @@ export default async function DashboardPage() {
         return <div>Error: Divisi belum di-assign.</div>;
 
       // Ambil statistik khusus Edukasi dan Pelatihan
-      const educationData = await getEducationDashboardData(
-        userProfile.divisionId,
+      const [educationData, divisionMembers] = await Promise.all([
+        getEducationDashboardData(userProfile.divisionId),
+        getDivisionMembers(userProfile.divisionId),
+      ]);
+      return (
+        <EducationDashboardView
+          user={userProfile}
+          data={educationData}
+          divisionMembers={divisionMembers}
+        />
       );
-      return <EducationDashboardView user={userProfile} data={educationData} />;
     }
     //KOORDINATOR LAIN (Media, dll - Coming Soon)
     return (
