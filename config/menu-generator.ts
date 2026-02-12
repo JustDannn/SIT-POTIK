@@ -96,11 +96,6 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
       return [
         ...baseMenu,
         { title: "Program & Event", href: "/dashboard/events", icon: Calendar },
-        {
-          title: "Peserta & Alumni",
-          href: "/dashboard/participants",
-          icon: GraduationCap,
-        },
         { title: "Impact Stories", href: "/dashboard/impacts", icon: Zap },
         { title: "Laporan", href: "/dashboard/reports", icon: ScrollText },
       ];

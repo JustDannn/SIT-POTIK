@@ -85,13 +85,6 @@ export default function EducationDashboardView({
             <PenTool size={18} />
             Impact Story
           </Link>
-          <Link
-            href="/dashboard/participants"
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-bold transition-colors hover:border-gray-300"
-          >
-            <GraduationCap size={18} />
-            Data Peserta
-          </Link>
         </div>
       </div>
 

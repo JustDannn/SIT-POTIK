@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { publications, users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import ImpactFeed from "./ImpactFeed";
 
 export const metadata = {
@@ -12,7 +12,10 @@ export const revalidate = 60;
 
 export default async function ImpactPage() {
   const stories = await db.query.publications.findMany({
-    where: eq(publications.category, "Impact"),
+    where: and(
+      eq(publications.category, "Impact"),
+      eq(publications.status, "published"),
+    ),
     orderBy: [desc(publications.createdAt)],
     with: {
       author: {

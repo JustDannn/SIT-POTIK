@@ -11,7 +11,8 @@ dns.lookup = (hostname: string, options: any, callback: any) => {
     callback = options;
     options = {};
   }
-  const opts = typeof options === "object" ? { ...options, family: 4 } : { family: 4 };
+  const opts =
+    typeof options === "object" ? { ...options, family: 4 } : { family: 4 };
   return originalLookup(hostname, opts, callback);
 };
 

@@ -363,6 +363,7 @@ export async function createImpactStory(eventId: number, formData: FormData) {
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath("/impact");
+    revalidatePath("/dashboard/impacts");
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -431,6 +432,7 @@ export async function updateImpactStory(
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath("/impact");
+    revalidatePath("/dashboard/impacts");
     return { success: true };
   } catch (error) {
     console.error(error);
