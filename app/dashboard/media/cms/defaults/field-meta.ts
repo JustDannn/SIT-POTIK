@@ -144,4 +144,8 @@ export const SECTION_LABELS: Record<string, string> = {
   wtd_prsdm_program_2: "Program 2",
   wtd_prsdm_program_3: "Program 3",
   wtd_prsdm_cta: "Call to Action",
+
+  // Meet Us
+  meet_hero: "Hero Section",
+  meet_mission: "Mission Statement",
 };

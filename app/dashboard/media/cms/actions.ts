@@ -162,6 +162,7 @@ export async function saveCMSField(
   }
 
   revalidatePath("/");
+  revalidatePath("/meet");
   revalidatePath("/what-we-do", "layout");
   revalidatePath("/dashboard/media/cms");
 
@@ -207,6 +208,7 @@ export async function saveCMSFields(
   }
 
   revalidatePath("/");
+  revalidatePath("/meet");
   revalidatePath("/what-we-do", "layout");
   revalidatePath("/dashboard/media/cms");
 

@@ -8,6 +8,7 @@ export { WTD_RISET_DEFAULTS } from "./wtd-riset";
 export { WTD_EDUKASI_DEFAULTS } from "./wtd-edukasi";
 export { WTD_MEDIA_DEFAULTS } from "./wtd-media";
 export { WTD_PR_SDM_DEFAULTS } from "./wtd-prsdm";
+export { MEET_DEFAULTS } from "./meet";
 export { FIELD_META, SECTION_LABELS } from "./field-meta";
 
 // ── Lazy-imports for the aggregate maps ──────────────
@@ -17,6 +18,7 @@ import { WTD_RISET_DEFAULTS } from "./wtd-riset";
 import { WTD_EDUKASI_DEFAULTS } from "./wtd-edukasi";
 import { WTD_MEDIA_DEFAULTS } from "./wtd-media";
 import { WTD_PR_SDM_DEFAULTS } from "./wtd-prsdm";
+import { MEET_DEFAULTS } from "./meet";
 
 // ─── Page slug → defaults map ────────────────────────
 export const PAGE_DEFAULTS: Record<
@@ -29,6 +31,7 @@ export const PAGE_DEFAULTS: Record<
   "what-we-do/edukasi": WTD_EDUKASI_DEFAULTS,
   "what-we-do/media": WTD_MEDIA_DEFAULTS,
   "what-we-do/pr-sdm": WTD_PR_SDM_DEFAULTS,
+  meet: MEET_DEFAULTS,
 };
 
 // ─── Page slug → display title ───────────────────────
@@ -39,6 +42,7 @@ export const PAGE_TITLES: Record<string, string> = {
   "what-we-do/edukasi": "Edukasi & Pelatihan",
   "what-we-do/media": "Media & Creative Branding",
   "what-we-do/pr-sdm": "PR & SDM",
+  meet: "Meet Us",
 };
 
 // ─── Page slug → public preview URL ──────────────────
@@ -49,4 +53,5 @@ export const PAGE_PREVIEW_URLS: Record<string, string> = {
   "what-we-do/edukasi": "/what-we-do/edukasi",
   "what-we-do/media": "/what-we-do/media",
   "what-we-do/pr-sdm": "/what-we-do/pr-sdm",
+  meet: "/meet",
 };
