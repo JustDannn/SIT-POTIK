@@ -4,7 +4,8 @@ import { db } from "@/db";
 import { publications, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, User, Share2 } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, Calendar, Share2 } from "lucide-react";
 
 export default async function ArticleDetailPage({
   params,
@@ -35,13 +36,13 @@ export default async function ArticleDetailPage({
     <div className="min-h-screen bg-white pt-24 pb-20">
       {/* Hero / Header Image */}
       {data.fileUrl && (
-        <div className="w-full h-[400px] relative mb-10">
-          <img
+        <div className="w-full h-100 relative mb-10">
+          <Image
             src={data.fileUrl}
             alt={data.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+          <div className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent"></div>
         </div>
       )}
 

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Search,
   FileText,
@@ -13,12 +14,42 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
+type FilterTab = "All" | "Artikel" | "Infografis";
+
+interface PublicationItem {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;
+  fileUrl: string | null;
+  thumbnailUrl: string | null;
+  category: string;
+  status: string | null;
+  authorId: string | null;
+  divisionId: number | null;
+  programId: number | null;
+  publishedAt: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    roleId: number;
+    divisionId: number | null;
+    createdAt: Date | null;
+    status: string | null;
+  } | null;
+}
+
 export default function PublicationFeed({
   initialData,
 }: {
-  initialData: any[];
+  initialData: PublicationItem[];
 }) {
-  const [filter, setFilter] = useState<"All" | "Artikel" | "Infografis">("All");
+  const [filter, setFilter] = useState<FilterTab>("All");
   const [search, setSearch] = useState("");
 
   const filteredData = initialData.filter((item) => {
@@ -68,7 +99,7 @@ export default function PublicationFeed({
             {["All", "Artikel", "Infografis"].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setFilter(tab as any)}
+                onClick={() => setFilter(tab as FilterTab)}
                 className={cn(
                   "px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300",
                   filter === tab
@@ -104,7 +135,7 @@ export default function PublicationFeed({
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10 duration-500"></div>
 
                   {item.thumbnailUrl ? (
-                    <img
+                    <Image
                       src={item.thumbnailUrl}
                       alt={item.title}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"

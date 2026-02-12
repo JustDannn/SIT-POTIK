@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/db";
 import { publications, users } from "@/db/schema";
 import { eq, desc, and, inArray } from "drizzle-orm";
@@ -59,13 +60,14 @@ export default async function UpdatesPage() {
               {/* Thumbnail Image */}
               <div className="h-48 bg-gray-200 overflow-hidden relative">
                 {item.fileUrl ? (
-                  <img
+                  <Image
                     src={item.fileUrl}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold opacity-80">
+                  <div className="w-full h-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold opacity-80">
                     POTIK UPDATE
                   </div>
                 )}

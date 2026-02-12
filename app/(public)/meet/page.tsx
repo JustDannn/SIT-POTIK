@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { DM_Serif_Display } from "next/font/google";
 
@@ -88,9 +89,11 @@ export default function MeetPage() {
           className="relative"
         >
           <div className="relative h-100 w-full overflow-hidden rounded-tl-4xl rounded-br-4xl rounded-tr-[8rem] rounded-bl-4xl shadow-xl">
-            <img
+            <Image
               src="/team-meet.jpg"
               alt="Team Meeting"
+              width={600}
+              height={400}
               className="object-cover w-full h-full hover:scale-105 transition-transform duration-700"
             />
           </div>
@@ -125,9 +128,11 @@ export default function MeetPage() {
           className="relative order-2 lg:order-1"
         >
           <div className="relative h-100 w-full overflow-hidden rounded-tr-4xl rounded-bl-[8rem] rounded-tl-4xl rounded-br-4xl shadow-xl">
-            <img
+            <Image
               src="/mission-activity.jpg"
               alt="Our Mission"
+              width={600}
+              height={400}
               className="object-cover w-full h-full hover:scale-105 transition-transform duration-700"
             />
           </div>

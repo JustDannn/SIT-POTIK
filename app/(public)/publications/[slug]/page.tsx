@@ -4,15 +4,7 @@ import Navbar from "@/components/Navbar";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import PublicationImageViewer from "@/components/PublicationImageViewer";
-import {
-  ArrowLeft,
-  Calendar,
-  User,
-  Download,
-  Share2,
-  FileText,
-  Image as ImageIcon,
-} from "lucide-react";
+import { ArrowLeft, Calendar, User, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const revalidate = 60;

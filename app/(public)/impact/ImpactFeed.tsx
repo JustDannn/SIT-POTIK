@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Search,
-  MapPin,
   Calendar,
   ArrowRight,
   Zap,
@@ -12,10 +12,32 @@ import {
   Users,
   Sparkles,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function ImpactFeed({ initialData }: { initialData: any[] }) {
+interface ImpactItem {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string | null;
+  fileUrl: string | null;
+  thumbnailUrl: string | null;
+  category: string;
+  status: string | null;
+  authorId: string | null;
+  divisionId: number | null;
+  programId: number | null;
+  createdAt: string | undefined;
+  updatedAt: string | undefined;
+  publishedAt: string | undefined;
+  author: { name: string; image: string | null } | null;
+}
+
+export default function ImpactFeed({
+  initialData,
+}: {
+  initialData: ImpactItem[];
+}) {
   const [search, setSearch] = useState("");
 
   const filteredData = initialData.filter((item) => {
@@ -81,10 +103,12 @@ export default function ImpactFeed({ initialData }: { initialData: any[] }) {
                   <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent opacity-60 z-10"></div>
 
                   {item.thumbnailUrl || item.fileUrl ? (
-                    <img
-                      src={item.thumbnailUrl || item.fileUrl}
+                    <Image
+                      src={item.thumbnailUrl ?? item.fileUrl ?? ""}
                       alt={item.title}
-                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-indigo-50 to-pink-50">
@@ -106,11 +130,13 @@ export default function ImpactFeed({ initialData }: { initialData: any[] }) {
                   <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-500 mb-4">
                     <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-2.5 py-1.5 rounded-lg">
                       <Calendar size={12} />
-                      {new Date(item.createdAt).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {item.createdAt
+                        ? new Date(item.createdAt).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "-"}
                     </span>
                     {/* Kalau ada lokasi (misal kita simpan di content/meta) bisa ditaruh sini */}
                     <span className="flex items-center gap-1.5 bg-pink-50 text-pink-600 px-2.5 py-1.5 rounded-lg">

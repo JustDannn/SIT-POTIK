@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from 'next/image'
 import { createClient } from "@/utils/supabase/client";
 import {
   uploadMediaAsset,
@@ -16,18 +17,13 @@ import {
   Folder,
   UploadCloud,
   Search,
-  Filter,
   Grid3X3,
   List,
   Trash2,
   Download,
-  Edit3,
   X,
   Loader2,
-  Check,
-  MoreVertical,
   Eye,
-  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -71,8 +67,6 @@ const TYPE_COLORS = {
 export default function AssetGallery({
   assets,
   folders,
-  programs = [],
-  divisions = [],
 }: AssetGalleryProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -342,7 +336,7 @@ export default function AssetGallery({
                   {/* Thumbnail */}
                   <div className="aspect-square bg-gray-100 relative overflow-hidden">
                     {asset.type === "image" ? (
-                      <img
+                      <Image
                         src={asset.thumbnailUrl || asset.url}
                         alt={asset.filename}
                         className="w-full h-full object-cover"
@@ -454,7 +448,7 @@ export default function AssetGallery({
                           >
                             <TypeIcon size={16} />
                           </div>
-                          <span className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                          <span className="text-sm font-medium text-gray-900 truncate max-w-50">
                             {asset.filename}
                           </span>
                         </div>
@@ -525,7 +519,7 @@ export default function AssetGallery({
             {/* Preview */}
             <div className="bg-gray-100 aspect-video relative">
               {selectedAsset.type === "image" ? (
-                <img
+                <Image
                   src={selectedAsset.url}
                   alt={selectedAsset.filename}
                   className="w-full h-full object-contain"

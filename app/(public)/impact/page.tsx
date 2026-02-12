@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { publications, users } from "@/db/schema";
+import { publications } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import ImpactFeed from "./ImpactFeed";
 

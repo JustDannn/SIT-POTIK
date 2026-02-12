@@ -3,7 +3,6 @@
 import { db } from "@/db";
 import {
   prokers,
-  tasks,
   users,
   publications,
   minutes,
@@ -13,25 +12,13 @@ import {
   guestBooks,
   partners,
   activityLogs,
-  divisions,
   programs,
   programParticipants,
   designRequests,
   mediaAssets,
   campaigns,
 } from "@/db/schema";
-import {
-  eq,
-  sql,
-  desc,
-  and,
-  ne,
-  count,
-  gte,
-  lt,
-  isNull,
-  inArray,
-} from "drizzle-orm";
+import { eq, sql, desc, and, ne, count, gte, lt, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
@@ -330,7 +317,7 @@ export async function addGuestEntry(formData: FormData) {
 }
 
 // GET ALL LOGS (Buat Halaman Full Rekap)
-export async function getAllGuestLogs(query: string = "") {
+export async function getAllGuestLogs() {
   // Simple search logic bisa ditambah disini nanti
   return await db
     .select({
@@ -492,7 +479,6 @@ export async function updateMemberStatus(userId: string, status: string) {
 export async function getEducationDashboardData(divisionId: number) {
   const now = new Date();
   const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   // KPI: Event Aktif (Ongoing)
   const activeEvents = await db
