@@ -46,9 +46,18 @@ interface EventItem {
   division: { divisionName: string } | null;
 }
 
+interface CMSContent {
+  hero: Record<string, string>;
+  pillars: Record<string, string>;
+  publications: Record<string, string>;
+  events: Record<string, string>;
+  cta: Record<string, string>;
+}
+
 interface LandingContentProps {
   publications: Publication[];
   events: EventItem[];
+  cms: CMSContent;
 }
 
 // HELPERS
@@ -161,6 +170,7 @@ function FloatingBlob({
 export default function LandingContent({
   publications,
   events,
+  cms,
 }: LandingContentProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -214,17 +224,17 @@ export default function LandingContent({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-semibold mb-6"
             >
               <Sparkles size={14} />
-              Pojok Statistik Telkom University Surabaya
+              {cms.hero.badge_text}
             </motion.div>
 
             <h1
               className={`${serifFont.className} text-5xl md:text-7xl text-gray-900 leading-[1.1] mb-6`}
             >
-              Where Data
+              {cms.hero.title_line1}
               <br />
-              Meets{" "}
+              {cms.hero.title_line2}{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-indigo-500 to-orange-500">
-                Impact.
+                {cms.hero.title_highlight}
               </span>
             </h1>
 
@@ -234,8 +244,7 @@ export default function LandingContent({
               transition={{ delay: 0.5, duration: 0.7 }}
               className="text-lg text-gray-600 leading-relaxed max-w-md mb-8"
             >
-              We build data literacy, craft research, and create impactful
-              stories — all from a small corner of campus with big ambitions.
+              {cms.hero.description}
             </motion.p>
 
             <motion.div
@@ -245,20 +254,20 @@ export default function LandingContent({
               className="flex flex-wrap gap-4"
             >
               <Link
-                href="/what-we-do/riset"
+                href={cms.hero.cta_primary_link}
                 className="group inline-flex items-center gap-2 px-6 py-3.5 bg-gray-900 text-white rounded-2xl font-semibold text-sm hover:bg-gray-800 transition-all hover:shadow-xl hover:shadow-gray-900/20"
               >
-                Explore Our Work
+                {cms.hero.cta_primary_text}
                 <ArrowRight
                   size={16}
                   className="group-hover:translate-x-1 transition-transform"
                 />
               </Link>
               <Link
-                href="/meet"
+                href={cms.hero.cta_secondary_link}
                 className="inline-flex items-center gap-2 px-6 py-3.5 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-sm hover:bg-gray-50 transition-all hover:shadow-lg"
               >
-                Meet the Team
+                {cms.hero.cta_secondary_text}
               </Link>
             </motion.div>
 
@@ -270,9 +279,21 @@ export default function LandingContent({
               className="flex gap-8 mt-12 pt-8 border-t border-gray-200/60"
             >
               {[
-                { icon: BarChart3, label: "Research Published", value: "50+" },
-                { icon: Users, label: "Active Members", value: "30+" },
-                { icon: Zap, label: "Events Held", value: "20+" },
+                {
+                  icon: BarChart3,
+                  label: cms.hero.stat_1_label,
+                  value: cms.hero.stat_1_value,
+                },
+                {
+                  icon: Users,
+                  label: cms.hero.stat_2_label,
+                  value: cms.hero.stat_2_value,
+                },
+                {
+                  icon: Zap,
+                  label: cms.hero.stat_3_label,
+                  value: cms.hero.stat_3_value,
+                },
               ].map((stat) => (
                 <div key={stat.label} className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-gray-100">
@@ -305,7 +326,7 @@ export default function LandingContent({
               <div className="absolute -bottom-4 -right-4 w-full h-full rounded-tl-[4rem] rounded-br-[4rem] rounded-tr-3xl rounded-bl-3xl border-2 border-blue-200/50" />
               <div className="relative h-full w-full overflow-hidden rounded-tl-[4rem] rounded-br-[4rem] rounded-tr-3xl rounded-bl-3xl shadow-2xl shadow-gray-300/40">
                 <Image
-                  src="/team-meet.jpg"
+                  src={cms.hero.hero_image}
                   alt="Pojok Statistik Team"
                   fill
                   className="object-cover hover:scale-105 transition-transform duration-700"
@@ -333,56 +354,55 @@ export default function LandingContent({
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 border border-orange-100 text-orange-600 text-sm font-semibold mb-4">
             <Sparkles size={14} />
-            What We Do
+            {cms.pillars.badge_text}
           </span>
           <h2
             className={`${serifFont.className} text-4xl md:text-5xl text-gray-900 mb-4`}
           >
-            Five Pillars, One Mission
+            {cms.pillars.title}
           </h2>
           <p className="text-gray-600 max-w-xl mx-auto leading-relaxed">
-            Each division plays a vital role in empowering data literacy across
-            campus and beyond.
+            {cms.pillars.description}
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {[
             {
-              title: "PR & SDM",
-              desc: "Public relations, human resources, and building strong team culture.",
+              title: cms.pillars.pillar_1_title,
+              desc: cms.pillars.pillar_1_desc,
               icon: Handshake,
               gradient: "from-rose-500 to-red-500",
               href: "/what-we-do/pr-sdm",
               delay: 0,
             },
             {
-              title: "Riset & Infografis",
-              desc: "Research papers, data analysis, and visual storytelling through infographics.",
+              title: cms.pillars.pillar_2_title,
+              desc: cms.pillars.pillar_2_desc,
               icon: BarChart3,
               gradient: "from-orange-400 to-amber-500",
               href: "/what-we-do/riset",
               delay: 0.05,
             },
             {
-              title: "Edukasi & Pelatihan",
-              desc: "Workshops, bootcamps, and hands-on programs to level up data skills.",
+              title: cms.pillars.pillar_3_title,
+              desc: cms.pillars.pillar_3_desc,
               icon: Users,
               gradient: "from-indigo-500 to-blue-600",
               href: "/what-we-do/edukasi",
               delay: 0.1,
             },
             {
-              title: "Media & Branding",
-              desc: "Creative campaigns, visual identity, and managing our digital presence.",
+              title: cms.pillars.pillar_4_title,
+              desc: cms.pillars.pillar_4_desc,
               icon: ImageIcon,
               gradient: "from-violet-500 to-pink-500",
               href: "/what-we-do/media",
               delay: 0.15,
             },
             {
-              title: "Layanan Data",
-              desc: "Data consultation, software installation, and supporting academic needs.",
+              title: cms.pillars.pillar_5_title,
+              desc: cms.pillars.pillar_5_desc,
               icon: Zap,
               gradient: "from-cyan-500 to-teal-500",
               href: "/what-we-do/data",
@@ -464,22 +484,21 @@ export default function LandingContent({
             <h2
               className={`${serifFont.className} text-4xl md:text-5xl text-gray-900 mb-3`}
             >
-              Latest{" "}
+              {cms.publications.title_prefix}{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 to-blue-600">
-                Publications
+                {cms.publications.title_highlight}
               </span>
             </h2>
             <p className="text-gray-600 max-w-lg leading-relaxed">
-              Articles, infographics, impact stories &mdash; everything we
-              publish, all in one place.
+              {cms.publications.description}
             </p>
           </div>
 
           <Link
-            href="/publications"
+            href={cms.publications.cta_link}
             className="group inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-sm hover:bg-gray-50 transition-all hover:shadow-lg shrink-0"
           >
-            View All
+            {cms.publications.cta_text}
             <ArrowRight
               size={16}
               className="group-hover:translate-x-1 transition-transform"
@@ -600,21 +619,21 @@ export default function LandingContent({
               <h2
                 className={`${serifFont.className} text-4xl md:text-5xl text-gray-900 mb-3`}
               >
-                Recent{" "}
+                {cms.events.title_prefix}{" "}
                 <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-pink-500">
-                  Events
+                  {cms.events.title_highlight}
                 </span>
               </h2>
               <p className="text-gray-600 max-w-lg leading-relaxed">
-                Programs, workshops, and community events that shape our impact.
+                {cms.events.description}
               </p>
             </div>
 
             <Link
-              href="/impact"
+              href={cms.events.cta_link}
               className="group inline-flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-sm hover:bg-gray-50 transition-all hover:shadow-lg shrink-0"
             >
-              View Stories
+              {cms.events.cta_text}
               <ArrowRight
                 size={16}
                 className="group-hover:translate-x-1 transition-transform"
@@ -714,32 +733,31 @@ export default function LandingContent({
             <h2
               className={`${serifFont.className} text-4xl md:text-5xl text-white mb-4`}
             >
-              Ready to make an{" "}
+              {cms.cta.title_prefix}{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-400 to-amber-300">
-                impact
+                {cms.cta.title_highlight}
               </span>
               ?
             </h2>
             <p className="text-gray-400 max-w-lg mx-auto mb-8 text-lg leading-relaxed">
-              Join Pojok Statistik and be part of a community that turns data
-              into action.
+              {cms.cta.description}
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
-                href="/meet"
+                href={cms.cta.cta_primary_link}
                 className="group inline-flex items-center gap-2 px-7 py-4 bg-white text-gray-900 rounded-2xl font-bold text-sm hover:bg-gray-100 transition-all hover:shadow-xl"
               >
-                Meet the Team
+                {cms.cta.cta_primary_text}
                 <ArrowRight
                   size={16}
                   className="group-hover:translate-x-1 transition-transform"
                 />
               </Link>
               <Link
-                href="/publications"
+                href={cms.cta.cta_secondary_link}
                 className="inline-flex items-center gap-2 px-7 py-4 bg-white/10 border border-white/20 text-white rounded-2xl font-bold text-sm hover:bg-white/20 transition-all"
               >
-                Browse Publications
+                {cms.cta.cta_secondary_text}
               </Link>
             </div>
           </div>

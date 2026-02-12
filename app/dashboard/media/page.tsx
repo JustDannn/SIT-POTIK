@@ -34,5 +34,23 @@ export default async function MediaDashboardPage() {
     redirect("/dashboard");
   }
 
-  return <MediaDashboardView userName={profile.name || "Media Team"} />;
+  return (
+    <MediaDashboardView
+      user={{
+        name: profile.name || "Media Team",
+        division: profile.division
+          ? { divisionName: profile.division.divisionName }
+          : null,
+      }}
+      stats={{
+        contentVelocity: 0,
+        pendingQueue: 0,
+        totalAssets: 0,
+        scheduledPosts: 0,
+      }}
+      incomingRequests={[]}
+      pendingPublications={[]}
+      upcomingCampaigns={[]}
+    />
+  );
 }
