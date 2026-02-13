@@ -27,6 +27,7 @@ interface TimelineItem {
   startDate: Date | string | null;
   endDate: Date | string | null;
   status: string | null;
+  type?: "proker" | "program";
 }
 
 interface ActivityItem {

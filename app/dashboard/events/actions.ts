@@ -280,20 +280,23 @@ export async function updateEventStatus(eventId: number, status: string) {
   }
 }
 
-// ADD PARTICIPANT TO EVENT
+// ADD PARTICIPANT TO EVENT OR PROKER
 export async function addParticipant(
   eventId: number,
   userId: string,
   role: string,
+  type: "program" | "proker" = "program",
 ) {
   try {
     await db.insert(programParticipants).values({
-      programId: eventId,
+      ...(type === "proker" ? { prokerId: eventId } : { programId: eventId }),
       userId,
       role,
     });
 
-    revalidatePath(`/dashboard/events/${eventId}`);
+    const basePath =
+      type === "proker" ? "/dashboard/proker" : "/dashboard/events";
+    revalidatePath(`${basePath}/${eventId}`);
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -302,13 +305,18 @@ export async function addParticipant(
 }
 
 // REMOVE PARTICIPANT
-export async function removeParticipant(participantId: number) {
+export async function removeParticipant(
+  participantId: number,
+  type: "program" | "proker" = "program",
+) {
   try {
     await db
       .delete(programParticipants)
       .where(eq(programParticipants.id, participantId));
 
-    revalidatePath("/dashboard/events");
+    const basePath =
+      type === "proker" ? "/dashboard/proker" : "/dashboard/events";
+    revalidatePath(basePath);
     return { success: true };
   } catch (error) {
     console.error(error);
@@ -458,7 +466,11 @@ export async function deleteImpactStory(impactId: number, eventId: number) {
 }
 
 // ADD EVENT LOG (manual dari form)
-export async function addEventLog(eventId: number, note: string) {
+export async function addEventLog(
+  eventId: number,
+  note: string,
+  type: "program" | "proker" = "program",
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -467,7 +479,9 @@ export async function addEventLog(eventId: number, note: string) {
 
   try {
     await logActivity(eventId, user.id, note);
-    revalidatePath(`/dashboard/events/${eventId}`);
+    const basePath =
+      type === "proker" ? "/dashboard/proker" : "/dashboard/events";
+    revalidatePath(`${basePath}/${eventId}`);
     return { success: true };
   } catch (error) {
     console.error("Add Log Error:", error);
@@ -487,12 +501,13 @@ export async function getDivisionMembers(divisionId: number) {
     .where(eq(users.divisionId, divisionId));
 }
 
-// CREATE EVENT TASK + LOG
+// CREATE EVENT/PROKER TASK + LOG
 export async function addEventTask(
   eventId: number,
   title: string,
   deadline?: string,
   assigneeId?: string,
+  type: "program" | "proker" = "program",
 ) {
   const supabase = await createClient();
   const {
@@ -502,7 +517,7 @@ export async function addEventTask(
 
   try {
     await db.insert(tasks).values({
-      programId: eventId,
+      ...(type === "proker" ? { prokerId: eventId } : { programId: eventId }),
       title: title,
       status: "todo",
       deadline: deadline ? new Date(deadline) : null,
@@ -526,7 +541,9 @@ export async function addEventTask(
 
     await logActivity(eventId, user.id, logMessage);
 
-    revalidatePath(`/dashboard/events/${eventId}`);
+    const basePath =
+      type === "proker" ? "/dashboard/proker" : "/dashboard/events";
+    revalidatePath(`${basePath}/${eventId}`);
     return { success: true };
   } catch (error) {
     console.error("Add Task Error:", error);
@@ -545,10 +562,12 @@ export async function toggleTaskStatus(taskId: number, currentStatus: string) {
   try {
     const taskData = await db.query.tasks.findFirst({
       where: eq(tasks.id, taskId),
-      columns: { title: true, programId: true },
+      columns: { title: true, programId: true, prokerId: true },
     });
-    if (!taskData || !taskData.programId) return { error: "Task not found" };
+    const parentId = taskData?.programId || taskData?.prokerId;
+    if (!taskData || !parentId) return { error: "Task not found" };
 
+    const isProker = !!taskData.prokerId && !taskData.programId;
     const newStatus = currentStatus === "done" ? "todo" : "done";
 
     await db
@@ -560,9 +579,10 @@ export async function toggleTaskStatus(taskId: number, currentStatus: string) {
       newStatus === "done" ? "Menyelesaikan" : "Membuka kembali";
     const logMessage = `${actionWord} task: "${taskData.title}"`;
 
-    await logActivity(taskData.programId, user.id, logMessage);
+    await logActivity(parentId, user.id, logMessage);
 
-    revalidatePath(`/dashboard/events/${taskData.programId}`);
+    const basePath = isProker ? "/dashboard/proker" : "/dashboard/events";
+    revalidatePath(`${basePath}/${parentId}`);
     return { success: true };
   } catch (error) {
     console.error("Toggle Task Error:", error);
@@ -570,7 +590,7 @@ export async function toggleTaskStatus(taskId: number, currentStatus: string) {
   }
 }
 
-// DELETE EVENT TASK + LOG
+// DELETE EVENT/PROKER TASK + LOG
 export async function deleteEventTask(taskId: number) {
   const supabase = await createClient();
   const {
@@ -581,19 +601,19 @@ export async function deleteEventTask(taskId: number) {
   try {
     const taskData = await db.query.tasks.findFirst({
       where: eq(tasks.id, taskId),
-      columns: { title: true, programId: true },
+      columns: { title: true, programId: true, prokerId: true },
     });
-    if (!taskData || !taskData.programId) return { error: "Task not found" };
+    const parentId = taskData?.programId || taskData?.prokerId;
+    if (!taskData || !parentId) return { error: "Task not found" };
+
+    const isProker = !!taskData.prokerId && !taskData.programId;
 
     await db.delete(tasks).where(eq(tasks.id, taskId));
 
-    await logActivity(
-      taskData.programId,
-      user.id,
-      `Menghapus task: "${taskData.title}"`,
-    );
+    await logActivity(parentId, user.id, `Menghapus task: "${taskData.title}"`);
 
-    revalidatePath(`/dashboard/events/${taskData.programId}`);
+    const basePath = isProker ? "/dashboard/proker" : "/dashboard/events";
+    revalidatePath(`${basePath}/${parentId}`);
     return { success: true };
   } catch (error) {
     console.error("Delete Task Error:", error);

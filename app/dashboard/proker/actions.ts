@@ -1,11 +1,35 @@
 "use server";
 
 import { db } from "@/db";
-import { prokers, divisions, users, tasks, activityLogs } from "@/db/schema";
-import { desc, eq, and } from "drizzle-orm";
+import {
+  prokers,
+  divisions,
+  users,
+  tasks,
+  activityLogs,
+  programs,
+  programParticipants,
+} from "@/db/schema";
+import { desc, eq, and, ne } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server"; // Tambahan buat Auth
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+// Map program status to proker-compatible status
+function mapProgramStatus(status: string | null): string {
+  switch (status) {
+    case "planned":
+      return "created";
+    case "ongoing":
+      return "active";
+    case "completed":
+      return "completed";
+    case "canceled":
+      return "archived";
+    default:
+      return "created";
+  }
+}
 
 export async function getAllProkers() {
   const supabase = await createClient();
@@ -14,6 +38,7 @@ export async function getAllProkers() {
   } = await supabase.auth.getUser();
 
   let whereCondition = undefined;
+  let programWhereCondition = undefined;
 
   if (user) {
     // Ambil detail user (role & divisi)
@@ -31,11 +56,13 @@ export async function getAllProkers() {
     ) {
       if (dbUser.divisionId) {
         whereCondition = eq(prokers.divisionId, dbUser.divisionId);
+        programWhereCondition = eq(programs.divisionId, dbUser.divisionId);
       }
     }
     // Kalau Ketua/Sekben, whereCondition tetap undefined (alias ambil semua)
   }
 
+  // 1. Fetch prokers
   const data = await db.query.prokers.findMany({
     where: whereCondition,
     orderBy: [desc(prokers.createdAt)],
@@ -45,7 +72,7 @@ export async function getAllProkers() {
     },
   });
 
-  return data.map((p) => ({
+  const prokerItems = data.map((p) => ({
     id: p.id,
     title: p.title,
     description: p.description,
@@ -56,7 +83,72 @@ export async function getAllProkers() {
     picName: p.pic?.name || "Belum ada PIC",
     picEmail: p.pic?.email || "",
     progress: p.status === "completed" ? 100 : p.status === "active" ? 50 : 0,
+    type: "proker" as const,
   }));
+
+  // 2. Fetch programs (events) and merge
+  const programQuery = db
+    .select({
+      id: programs.id,
+      title: programs.title,
+      description: programs.description,
+      startDate: programs.startDate,
+      endDate: programs.endDate,
+      status: programs.status,
+      divisionName: divisions.divisionName,
+    })
+    .from(programs)
+    .leftJoin(divisions, eq(programs.divisionId, divisions.id));
+
+  const programData = programWhereCondition
+    ? await programQuery
+        .where(programWhereCondition)
+        .orderBy(desc(programs.createdAt))
+    : await programQuery.orderBy(desc(programs.createdAt));
+
+  // Get PIC for each program (first participant with role 'PIC')
+  const programItems = await Promise.all(
+    programData.map(async (p) => {
+      const pic = await db
+        .select({ name: users.name, email: users.email })
+        .from(programParticipants)
+        .leftJoin(users, eq(programParticipants.userId, users.id))
+        .where(
+          and(
+            eq(programParticipants.programId, p.id),
+            eq(programParticipants.role, "PIC"),
+          ),
+        )
+        .limit(1);
+
+      const mappedStatus = mapProgramStatus(p.status);
+      return {
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        status: mappedStatus,
+        startDate: p.startDate,
+        endDate: p.endDate,
+        divisionName: p.divisionName || "Tanpa Divisi",
+        picName: pic[0]?.name || "Belum ada PIC",
+        picEmail: pic[0]?.email || "",
+        progress:
+          mappedStatus === "completed"
+            ? 100
+            : mappedStatus === "active"
+              ? 50
+              : 0,
+        type: "program" as const,
+      };
+    }),
+  );
+
+  // 3. Merge and sort
+  return [...prokerItems, ...programItems].sort((a, b) => {
+    const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+    const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+    return dateB - dateA;
+  });
 }
 
 export async function getProkerDetail(prokerId: number) {

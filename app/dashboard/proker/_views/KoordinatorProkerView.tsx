@@ -90,6 +90,7 @@ export default function KoordinatorProkerView({
             status: p.status ?? "created",
             startDate: p.startDate,
             endDate: p.endDate,
+            type: p.type,
           }))}
         />
       )}
@@ -206,9 +207,12 @@ export default function KoordinatorProkerView({
               </button>
             </div>
 
-            <form action={async (formData: FormData) => {
-              await createProker(formData);
-            }} className="space-y-4">
+            <form
+              action={async (formData: FormData) => {
+                await createProker(formData);
+              }}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">
                   Nama Kegiatan

@@ -43,6 +43,7 @@ interface ProkerItem {
   startDate: Date | string | null;
   endDate: Date | string | null;
   progress: number;
+  type?: "proker" | "program";
 }
 
 export default function KetuaProkerView({ data }: { data: ProkerItem[] }) {
@@ -132,6 +133,7 @@ export default function KetuaProkerView({ data }: { data: ProkerItem[] }) {
             status: p.status,
             startDate: p.startDate,
             endDate: p.endDate,
+            type: p.type,
           }))}
         />
       )}
@@ -175,8 +177,12 @@ export default function KetuaProkerView({ data }: { data: ProkerItem[] }) {
             ) : (
               filteredData.map((proker) => (
                 <Link
-                  key={proker.id}
-                  href={`/dashboard/proker/${proker.id}`}
+                  key={`${proker.type || "proker"}-${proker.id}`}
+                  href={
+                    proker.type === "program"
+                      ? `/dashboard/events/${proker.id}`
+                      : `/dashboard/proker/${proker.id}`
+                  }
                   className="block"
                 >
                   <div className="group bg-white rounded-xl border border-gray-200 p-5 hover:border-orange-300 hover:shadow-sm transition-all cursor-pointer relative overflow-hidden">
@@ -220,9 +226,9 @@ export default function KetuaProkerView({ data }: { data: ProkerItem[] }) {
                             <span>
                               Deadline:{" "}
                               {proker.endDate
-                                ? new Date(
-                                    proker.endDate,
-                                  ).toLocaleDateString("id-ID")
+                                ? new Date(proker.endDate).toLocaleDateString(
+                                    "id-ID",
+                                  )
                                 : "-"}
                             </span>
                           </div>

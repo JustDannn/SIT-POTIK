@@ -12,6 +12,7 @@ export interface ProkerGanttItem {
   status: string;
   startDate: Date | string | null;
   endDate: Date | string | null;
+  type?: "proker" | "program";
 }
 
 // Status colors for the bars
@@ -274,13 +275,17 @@ export default function ProkerGanttChart({
 
               return (
                 <div
-                  key={p.id}
+                  key={`${p.type || "proker"}-${p.id}`}
                   className="flex border-b border-gray-50 hover:bg-gray-50/40 transition-colors group relative"
                 >
                   {/* Proker Label (Sticky Left) */}
                   <div className="w-52 shrink-0 px-4 py-3 border-r border-gray-100 flex flex-col justify-center min-h-15 bg-white sticky left-0 z-10 group-hover:bg-gray-50/40">
                     <Link
-                      href={`/dashboard/proker/${p.id}`}
+                      href={
+                        p.type === "program"
+                          ? `/dashboard/events/${p.id}`
+                          : `/dashboard/proker/${p.id}`
+                      }
                       className="text-sm font-bold text-gray-800 truncate leading-tight hover:text-orange-600 transition-colors"
                       title={p.title}
                     >
@@ -329,7 +334,11 @@ export default function ProkerGanttChart({
 
                     {/* THE BAR */}
                     <Link
-                      href={`/dashboard/proker/${p.id}`}
+                      href={
+                        p.type === "program"
+                          ? `/dashboard/events/${p.id}`
+                          : `/dashboard/proker/${p.id}`
+                      }
                       className={cn(
                         "absolute top-1/2 -translate-y-1/2 h-8 rounded-lg border flex items-center px-2.5 gap-1.5 cursor-pointer transition-all hover:shadow-md hover:h-9 z-[2]",
                         style.bg,

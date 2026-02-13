@@ -385,6 +385,9 @@ export const programParticipants = pgTable("program_participants", {
   programId: integer("program_id").references(() => programs.id, {
     onDelete: "cascade",
   }),
+  prokerId: integer("proker_id").references(() => prokers.id, {
+    onDelete: "cascade",
+  }),
   userId: uuid("user_id").references(() => users.id),
   role: text("role").notNull(), // 'PIC', 'Anggota', 'Notulen'
   joinedAt: timestamp("joined_at").defaultNow(),

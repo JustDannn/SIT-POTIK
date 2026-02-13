@@ -1,6 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/db";
-import { prokers, divisions, users, tasks, activityLogs } from "@/db/schema";
+import {
+  prokers,
+  divisions,
+  users,
+  tasks,
+  activityLogs,
+  programParticipants,
+} from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 
@@ -28,7 +35,6 @@ export default async function ProkerDetailPage({ params }: PageProps) {
 
   if (!authUser) redirect("/login");
 
-  // Ambil profil user lengkap untuk dipassing ke View (buat keperluan aksi Add Task/Log)
   const userProfile = await db.query.users.findFirst({
     where: eq(users.id, authUser.id),
     with: { role: true, division: true },
@@ -44,7 +50,9 @@ export default async function ProkerDetailPage({ params }: PageProps) {
         status: prokers.status,
         startDate: prokers.startDate,
         endDate: prokers.endDate,
+        divisionId: prokers.divisionId,
         divisionName: divisions.divisionName,
+        picUserId: prokers.picUserId,
         picName: users.name,
       })
       .from(prokers)
@@ -59,75 +67,103 @@ export default async function ProkerDetailPage({ params }: PageProps) {
 
     const prokerData = prokerResult[0];
 
-    // 4. Fetch Tasks
+    // 4. Fetch Tasks (formatted to match EventTasks interface)
     const taskList = await db
       .select({
         id: tasks.id,
+        prokerId: tasks.prokerId,
+        programId: tasks.programId,
         title: tasks.title,
         description: tasks.description,
+        assignedUserId: tasks.assignedUserId,
+        assignedUserName: users.name,
         status: tasks.status,
         deadline: tasks.deadline,
-        assignedUserName: users.name,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.assignedUserId, users.id))
       .where(eq(tasks.prokerId, prokerId))
-      .orderBy(desc(tasks.createdAt)); // Task baru di atas
+      .orderBy(desc(tasks.createdAt));
 
-    // 5. Fetch Activity Logs
+    // 5. Fetch Activity Logs (formatted to match EventLogs interface)
     const logList = await db
       .select({
         id: activityLogs.id,
         notes: activityLogs.notes,
-        createdAt: activityLogs.createdAt,
+        logDate: activityLogs.logDate,
         userName: users.name,
       })
       .from(activityLogs)
       .leftJoin(users, eq(activityLogs.createdBy, users.id))
       .where(eq(activityLogs.prokerId, prokerId))
-      .orderBy(desc(activityLogs.createdAt)); // Log baru di atas
+      .orderBy(desc(activityLogs.logDate));
 
-    // 6. Calculate Progress
+    // 6. Fetch Participants (from programParticipants with prokerId)
+    const participantList = await db
+      .select({
+        id: programParticipants.id,
+        role: programParticipants.role,
+        joinedAt: programParticipants.joinedAt,
+        userId: users.id,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(programParticipants)
+      .leftJoin(users, eq(programParticipants.userId, users.id))
+      .where(eq(programParticipants.prokerId, prokerId));
+
+    // 7. Calculate Progress
     const totalTasks = taskList.length;
     const doneTasks = taskList.filter((t) => t.status === "done").length;
     const progress =
       totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
-    // 7. Format Data for View
-    // Kita sesuaikan nama fieldnya agar cocok dengan ProkerDetailView
+    // 8. Format Data for View (matching event data shape)
     const formattedProker = {
       id: prokerData.id,
+      type: "proker" as const,
       title: prokerData.title,
       description: prokerData.description,
       status: prokerData.status,
+      divisionId: prokerData.divisionId,
       divisionName: prokerData.divisionName || "Tanpa Divisi",
       picName: prokerData.picName || "Belum ada PIC",
-      startDate: prokerData.startDate,
-      endDate: prokerData.endDate,
+      startDate: prokerData.startDate
+        ? prokerData.startDate.toISOString()
+        : null,
+      endDate: prokerData.endDate ? prokerData.endDate.toISOString() : null,
       progress: progress,
-      // Mapping Tasks
-      tasks: taskList.map((t) => ({
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        status: t.status,
-        deadline: t.deadline,
-        assignedUser: t.assignedUserName ? { name: t.assignedUserName } : null,
+      // Participants (matching EventTeam interface)
+      participants: participantList.map((p) => ({
+        ...p,
+        joinedAt: p.joinedAt
+          ? p.joinedAt.toISOString()
+          : new Date().toISOString(),
       })),
-      // Mapping Logs (Pastikan key-nya 'logs' bukan 'activityLogs' karena View minta 'logs')
+      // Tasks (matching EventTasks interface)
+      tasks: taskList.map((t) => ({
+        ...t,
+        deadline: t.deadline ? t.deadline.toISOString() : null,
+        createdAt: t.createdAt ? t.createdAt.toISOString() : null,
+        updatedAt: t.updatedAt ? t.updatedAt.toISOString() : null,
+      })),
+      // Logs (matching EventLogs interface)
       logs: logList.map((l) => ({
         id: l.id,
         notes: l.notes,
-        createdAt: l.createdAt,
-        user: l.userName ? { name: l.userName } : { name: "Unknown" },
+        userName: l.userName || "Unknown",
+        createdAt: l.logDate
+          ? l.logDate.toISOString()
+          : new Date().toISOString(),
       })),
     };
 
-    // 8. Render View
+    // 9. Render View
     return <ProkerDetailView proker={formattedProker} user={userProfile} />;
   } catch (error) {
     console.error("Error fetching proker detail:", error);
-    // Bisa return custom error UI disini
     notFound();
   }
 }

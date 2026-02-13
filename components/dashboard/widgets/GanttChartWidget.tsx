@@ -11,6 +11,7 @@ interface ProkerItem {
   startDate: Date | string | null;
   endDate: Date | string | null;
   status: string | null;
+  type?: "proker" | "program";
 }
 
 interface GanttChartWidgetProps {
@@ -18,11 +19,30 @@ interface GanttChartWidgetProps {
 }
 
 // Color palette by status
-const STATUS_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  active: { bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-800" },
-  created: { bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-700" },
-  completed: { bg: "bg-emerald-100", border: "border-emerald-300", text: "text-emerald-800" },
-  archived: { bg: "bg-amber-100", border: "border-amber-300", text: "text-amber-800" },
+const STATUS_COLORS: Record<
+  string,
+  { bg: string; border: string; text: string }
+> = {
+  active: {
+    bg: "bg-blue-100",
+    border: "border-blue-300",
+    text: "text-blue-800",
+  },
+  created: {
+    bg: "bg-gray-100",
+    border: "border-gray-300",
+    text: "text-gray-700",
+  },
+  completed: {
+    bg: "bg-emerald-100",
+    border: "border-emerald-300",
+    text: "text-emerald-800",
+  },
+  archived: {
+    bg: "bg-amber-100",
+    border: "border-amber-300",
+    text: "text-amber-800",
+  },
 };
 
 const DIVISION_COLORS = [
@@ -56,84 +76,98 @@ function formatMonthYear(date: Date): string {
 }
 
 export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
-  const { days, startEpoch, totalDays, monthLabel, todayOffset, rows } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const { days, startEpoch, totalDays, monthLabel, todayOffset, rows } =
+    useMemo(() => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    // Show a window: 7 days before today to 21 days after = 28 days total
-    const windowStart = new Date(today);
-    windowStart.setDate(windowStart.getDate() - 7);
-    const windowEnd = new Date(today);
-    windowEnd.setDate(windowEnd.getDate() + 21);
+      // Show a window: 7 days before today to 21 days after = 28 days total
+      const windowStart = new Date(today);
+      windowStart.setDate(windowStart.getDate() - 7);
+      const windowEnd = new Date(today);
+      windowEnd.setDate(windowEnd.getDate() + 21);
 
-    const totalDays = 28;
-    const startEpoch = windowStart.getTime();
-    const dayMs = 86400000;
+      const totalDays = 28;
+      const startEpoch = windowStart.getTime();
+      const dayMs = 86400000;
 
-    // Generate day labels
-    const days: { date: Date; label: string; isToday: boolean; isWeekend: boolean }[] = [];
-    for (let i = 0; i < totalDays; i++) {
-      const d = new Date(windowStart.getTime() + i * dayMs);
-      const dayOfWeek = d.getDay();
-      days.push({
-        date: d,
-        label: formatDay(d),
-        isToday: d.getTime() === today.getTime(),
-        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-      });
-    }
+      // Generate day labels
+      const days: {
+        date: Date;
+        label: string;
+        isToday: boolean;
+        isWeekend: boolean;
+      }[] = [];
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(windowStart.getTime() + i * dayMs);
+        const dayOfWeek = d.getDay();
+        days.push({
+          date: d,
+          label: formatDay(d),
+          isToday: d.getTime() === today.getTime(),
+          isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+        });
+      }
 
-    // Today offset (fraction of total width)
-    const todayOffset = ((today.getTime() - startEpoch) / (totalDays * dayMs)) * 100;
+      // Today offset (fraction of total width)
+      const todayOffset =
+        ((today.getTime() - startEpoch) / (totalDays * dayMs)) * 100;
 
-    // Month label
-    const monthLabel = formatMonthYear(today);
+      // Month label
+      const monthLabel = formatMonthYear(today);
 
-    // Calculate bar positions
-    const divisionMap = new Map<string, number>();
+      // Calculate bar positions
+      const divisionMap = new Map<string, number>();
 
-    const rows = data
-      .filter((p) => {
-        const s = toDate(p.startDate);
-        const e = toDate(p.endDate);
-        if (!s) return false;
-        const end = e || new Date(s.getTime() + dayMs);
-        // Filter out items completely outside the window
-        return end.getTime() >= windowStart.getTime() && s.getTime() <= windowEnd.getTime();
-      })
-      .map((p) => {
-        const s = toDate(p.startDate)!;
-        const e = toDate(p.endDate) || new Date(s.getTime() + dayMs);
+      const rows = data
+        .filter((p) => {
+          const s = toDate(p.startDate);
+          const e = toDate(p.endDate);
+          if (!s) return false;
+          const end = e || new Date(s.getTime() + dayMs);
+          // Filter out items completely outside the window
+          return (
+            end.getTime() >= windowStart.getTime() &&
+            s.getTime() <= windowEnd.getTime()
+          );
+        })
+        .map((p) => {
+          const s = toDate(p.startDate)!;
+          const e = toDate(p.endDate) || new Date(s.getTime() + dayMs);
 
-        // Clamp to window
-        const barStart = Math.max(s.getTime(), windowStart.getTime());
-        const barEnd = Math.min(e.getTime(), windowEnd.getTime());
+          // Clamp to window
+          const barStart = Math.max(s.getTime(), windowStart.getTime());
+          const barEnd = Math.min(e.getTime(), windowEnd.getTime());
 
-        const leftPct = ((barStart - startEpoch) / (totalDays * dayMs)) * 100;
-        const widthPct = ((barEnd - barStart) / (totalDays * dayMs)) * 100;
+          const leftPct = ((barStart - startEpoch) / (totalDays * dayMs)) * 100;
+          const widthPct = ((barEnd - barStart) / (totalDays * dayMs)) * 100;
 
-        const color = getDivisionColor(p.division, divisionMap);
+          const color = getDivisionColor(p.division, divisionMap);
 
-        return {
-          id: p.id,
-          title: p.title,
-          division: p.division,
-          status: p.status,
-          leftPct: Math.max(0, leftPct),
-          widthPct: Math.max(1, widthPct), // min 1% so it's visible
-          color,
-        };
-      });
+          return {
+            id: p.id,
+            title: p.title,
+            division: p.division,
+            status: p.status,
+            type: p.type,
+            leftPct: Math.max(0, leftPct),
+            widthPct: Math.max(1, widthPct), // min 1% so it's visible
+            color,
+          };
+        });
 
-    return { days, startEpoch, totalDays, monthLabel, todayOffset, rows };
-  }, [data]);
+      return { days, startEpoch, totalDays, monthLabel, todayOffset, rows };
+    }, [data]);
 
   if (data.length === 0) {
     return (
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-gray-800">Proker Overview</h3>
-          <Link href="/dashboard/proker" className="p-1 hover:bg-gray-100 rounded-full">
+          <Link
+            href="/dashboard/proker"
+            className="p-1 hover:bg-gray-100 rounded-full"
+          >
             <ChevronRight size={16} />
           </Link>
         </div>
@@ -150,9 +184,14 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
       <div className="flex justify-between items-center mb-5">
         <div>
           <h3 className="font-bold text-gray-800">Proker Overview</h3>
-          <p className="text-xs text-gray-400 mt-0.5">{monthLabel} · {totalDays} hari</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {monthLabel} · {totalDays} hari
+          </p>
         </div>
-        <Link href="/dashboard/proker" className="p-1 hover:bg-gray-100 rounded-full transition">
+        <Link
+          href="/dashboard/proker"
+          className="p-1 hover:bg-gray-100 rounded-full transition"
+        >
           <ChevronRight size={16} className="text-gray-400" />
         </Link>
       </div>
@@ -179,7 +218,10 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
           </div>
 
           {/* Chart Body (relative container for bars + today line) */}
-          <div className="relative" style={{ minHeight: `${Math.max(rows.length * 40 + 8, 80)}px` }}>
+          <div
+            className="relative"
+            style={{ minHeight: `${Math.max(rows.length * 40 + 8, 80)}px` }}
+          >
             {/* Vertical grid lines (every 7 days) */}
             {[7, 14, 21].map((d) => (
               <div
@@ -200,7 +242,7 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
             {/* Proker Bars */}
             {rows.map((row, idx) => (
               <div
-                key={row.id}
+                key={`${row.type || "proker"}-${row.id}`}
                 className="absolute h-7 flex items-center z-20"
                 style={{
                   left: `${row.leftPct}%`,
@@ -209,7 +251,11 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
                 }}
               >
                 <Link
-                  href={`/dashboard/proker/${row.id}`}
+                  href={
+                    row.type === "program"
+                      ? `/dashboard/events/${row.id}`
+                      : `/dashboard/proker/${row.id}`
+                  }
                   className={`w-full h-full flex items-center rounded-md border text-[11px] font-semibold px-2 truncate shadow-sm cursor-pointer hover:brightness-95 transition ${row.color.bg} ${row.color.border} ${row.color.text}`}
                   title={`${row.title} (${row.division})`}
                 >
@@ -226,8 +272,13 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
         {Array.from(new Set(rows.map((r) => r.division))).map((division) => {
           const color = rows.find((r) => r.division === division)?.color;
           return (
-            <div key={division} className="flex items-center gap-1.5 text-[10px] text-gray-500">
-              <div className={`w-2.5 h-2.5 rounded-sm ${color?.bg} ${color?.border} border`} />
+            <div
+              key={division}
+              className="flex items-center gap-1.5 text-[10px] text-gray-500"
+            >
+              <div
+                className={`w-2.5 h-2.5 rounded-sm ${color?.bg} ${color?.border} border`}
+              />
               {division}
             </div>
           );

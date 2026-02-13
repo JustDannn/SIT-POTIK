@@ -36,10 +36,12 @@ export default function EventTeam({
   eventId,
   divisionId,
   participants: initialParticipants = [],
+  type = "program",
 }: {
   eventId: number;
   divisionId: number;
   participants: Participant[];
+  type?: "program" | "proker";
 }) {
   const [participants, setParticipants] =
     useState<Participant[]>(initialParticipants);
@@ -99,7 +101,7 @@ export default function EventTeam({
     if (selectedMembers.length === 0) return;
     startTransition(async () => {
       for (const member of selectedMembers) {
-        await addParticipant(eventId, member.userId, member.role);
+        await addParticipant(eventId, member.userId, member.role, type);
       }
       // Refresh: add new members to local state
       const newParticipants = selectedMembers.map((m) => {
@@ -121,7 +123,7 @@ export default function EventTeam({
 
   function handleRemove(participantId: number) {
     startTransition(async () => {
-      const result = await removeParticipant(participantId);
+      const result = await removeParticipant(participantId, type);
       if (result.success) {
         setParticipants((prev) => prev.filter((p) => p.id !== participantId));
       }

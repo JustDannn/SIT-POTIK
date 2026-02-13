@@ -34,10 +34,12 @@ export default function EventTasks({
   eventId,
   tasks = [],
   participants = [],
+  type = "program",
 }: {
   eventId: number;
   tasks: TaskItem[];
   participants: Participant[];
+  type?: "program" | "proker";
 }) {
   const router = useRouter();
   const [newTask, setNewTask] = useState("");
@@ -57,6 +59,7 @@ export default function EventTasks({
       newTask,
       deadline || undefined,
       assignee || undefined,
+      type,
     );
     setNewTask("");
     setDeadline("");

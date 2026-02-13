@@ -13,9 +13,11 @@ interface EventLog {
 export default function EventLogs({
   eventId,
   logs = [],
+  type = "program",
 }: {
   eventId: number;
   logs: EventLog[];
+  type?: "program" | "proker";
 }) {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function EventLogs({
     if (!note.trim()) return;
 
     setLoading(true);
-    const res = await addEventLog(eventId, note);
+    const res = await addEventLog(eventId, note, type);
     setLoading(false);
 
     if (res?.error) {

@@ -15,61 +15,144 @@ import {
   activityLogs,
   programs,
   programParticipants,
+  divisions,
   designRequests,
   mediaAssets,
   campaigns,
 } from "@/db/schema";
-import { eq, sql, desc, and, ne, count, gte, lt, inArray } from "drizzle-orm";
+import {
+  eq,
+  sql,
+  desc,
+  and,
+  ne,
+  count,
+  gte,
+  lt,
+  inArray,
+  or,
+} from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
 export async function getDashboardStats() {
-  const [activeProkers, completedProkers, pendingReports, pendingLPJ] =
-    await Promise.all([
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(prokers)
-        .where(eq(prokers.status, "active")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(prokers)
-        .where(eq(prokers.status, "completed")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(reports)
-        .where(eq(reports.status, "submitted")),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(lpjs)
-        .where(eq(lpjs.status, "submitted")),
-    ]);
+  const [
+    activeProkers,
+    completedProkers,
+    pendingReports,
+    pendingLPJ,
+    activePrograms,
+    completedPrograms,
+  ] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(prokers)
+      .where(eq(prokers.status, "active")),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(prokers)
+      .where(eq(prokers.status, "completed")),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(reports)
+      .where(eq(reports.status, "submitted")),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(lpjs)
+      .where(eq(lpjs.status, "submitted")),
+    // Also count programs (events) that are active/ongoing or planned
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(programs)
+      .where(
+        or(eq(programs.status, "ongoing"), eq(programs.status, "planned")),
+      ),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(programs)
+      .where(eq(programs.status, "completed")),
+  ]);
 
   return {
-    active: Number(activeProkers[0].count),
-    completed: Number(completedProkers[0].count),
+    active: Number(activeProkers[0].count) + Number(activePrograms[0].count),
+    completed:
+      Number(completedProkers[0].count) + Number(completedPrograms[0].count),
     pendingReports: Number(pendingReports[0].count),
     pendingLPJ: Number(pendingLPJ[0].count),
   };
 }
 
+// Map program status to proker-compatible status for display
+function mapProgramStatus(status: string | null): string {
+  switch (status) {
+    case "planned":
+      return "created";
+    case "ongoing":
+      return "active";
+    case "completed":
+      return "completed";
+    case "canceled":
+      return "archived";
+    default:
+      return "created";
+  }
+}
+
 export async function getTimelineData() {
-  const data = await db.query.prokers.findMany({
-    where: ne(prokers.status, "completed"), // ambil yang belum kelar buat timeline
+  // 1. Fetch from prokers table
+  const prokerData = await db.query.prokers.findMany({
+    where: ne(prokers.status, "completed"),
     orderBy: [desc(prokers.startDate)],
-    limit: 5,
+    limit: 10,
     with: {
       division: true,
     },
   });
 
-  return data.map((p) => ({
+  const prokerItems = prokerData.map((p) => ({
     id: p.id,
     title: p.title,
     division: p.division?.divisionName || "Umum",
     startDate: p.startDate,
     endDate: p.endDate,
     status: p.status,
+    type: "proker" as const,
   }));
+
+  // 2. Fetch from programs table (events from divisions like Edukasi Pelatihan)
+  const programData = await db
+    .select({
+      id: programs.id,
+      title: programs.title,
+      divisionName: divisions.divisionName,
+      startDate: programs.startDate,
+      endDate: programs.endDate,
+      status: programs.status,
+    })
+    .from(programs)
+    .leftJoin(divisions, eq(programs.divisionId, divisions.id))
+    .where(ne(programs.status, "completed"))
+    .orderBy(desc(programs.startDate))
+    .limit(10);
+
+  const programItems = programData.map((p) => ({
+    id: p.id,
+    title: p.title,
+    division: p.divisionName || "Umum",
+    startDate: p.startDate,
+    endDate: p.endDate,
+    status: mapProgramStatus(p.status),
+    type: "program" as const,
+  }));
+
+  // 3. Combine, sort by startDate desc, take top items
+  return [...prokerItems, ...programItems]
+    .sort((a, b) => {
+      const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+      return dateB - dateA;
+    })
+    .slice(0, 10);
 }
 
 export async function getAttentionItems() {
