@@ -7,12 +7,13 @@ import {
   Plus,
   Target,
   ArrowRight,
-  Clock,
-  CheckCircle2,
+  LayoutGrid,
+  BarChart3,
   X,
 } from "lucide-react";
 import { createProker } from "../actions";
 import { cn } from "@/lib/utils";
+import ProkerGanttChart from "../_components/ProkerGanttChart";
 
 export default function KoordinatorProkerView({
   data,
@@ -22,6 +23,7 @@ export default function KoordinatorProkerView({
   user: any;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "gantt">("card");
 
   // Ambil nama divisi dari user profile
   const divisionName = user.division?.divisionName || "Divisi Saya";
@@ -39,108 +41,154 @@ export default function KoordinatorProkerView({
           </p>
         </div>
 
-        {/* Tombol Create hanya untuk Koordinator */}
-        {user.role?.roleName === "Koordinator" && (
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm transition-colors"
-          >
-            <Plus size={18} /> Buat Proker Baru
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1 gap-0.5">
+            <button
+              onClick={() => setViewMode("card")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                viewMode === "card"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700",
+              )}
+            >
+              <LayoutGrid size={14} /> Card
+            </button>
+            <button
+              onClick={() => setViewMode("gantt")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                viewMode === "gantt"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700",
+              )}
+            >
+              <BarChart3 size={14} /> Gantt
+            </button>
+          </div>
+
+          {/* Tombol Create hanya untuk Koordinator */}
+          {user.role?.roleName === "Koordinator" && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium shadow-sm transition-colors"
+            >
+              <Plus size={18} /> Buat Proker Baru
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* PROKER LIST */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {data.map((proker) => (
-          <Link
-            key={proker.id}
-            href={`/dashboard/proker/${proker.id}`}
-            className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-indigo-300 hover:shadow-md transition-all relative overflow-hidden"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center text-white",
-                  proker.status === "completed"
-                    ? "bg-green-500"
-                    : proker.status === "active"
-                      ? "bg-indigo-500"
-                      : "bg-gray-400",
-                )}
-              >
-                <Target size={20} />
-              </div>
-              <span
-                className={cn(
-                  "px-2 py-1 rounded-full text-[10px] font-bold uppercase",
-                  proker.status === "completed"
-                    ? "bg-green-100 text-green-700"
-                    : proker.status === "active"
-                      ? "bg-indigo-100 text-indigo-700"
-                      : "bg-gray-100 text-gray-600",
-                )}
-              >
-                {proker.status}
-              </span>
-            </div>
+      {/* GANTT VIEW */}
+      {viewMode === "gantt" && (
+        <ProkerGanttChart
+          data={data.map((p) => ({
+            id: p.id,
+            title: p.title,
+            divisionName: p.divisionName || divisionName,
+            status: p.status ?? "created",
+            startDate: p.startDate,
+            endDate: p.endDate,
+          }))}
+        />
+      )}
 
-            <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-1">
-              {proker.title}
-            </h3>
-            <p className="text-sm text-gray-500 line-clamp-2 mb-4 h-10">
-              {proker.description || "Tidak ada deskripsi."}
-            </p>
-
-            {/* Timeline & PIC */}
-            <div className="space-y-2 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <Calendar size={14} />
-                <span>
-                  {new Date(proker.startDate).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "short",
-                  })}{" "}
-                  -{" "}
-                  {new Date(proker.endDate).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[8px] font-bold">
-                  {proker.picName.charAt(0)}
+      {/* CARD VIEW */}
+      {viewMode === "card" && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {data.map((proker) => (
+              <Link
+                key={proker.id}
+                href={`/dashboard/proker/${proker.id}`}
+                className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-indigo-300 hover:shadow-md transition-all relative overflow-hidden"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center text-white",
+                      proker.status === "completed"
+                        ? "bg-green-500"
+                        : proker.status === "active"
+                          ? "bg-indigo-500"
+                          : "bg-gray-400",
+                    )}
+                  >
+                    <Target size={20} />
+                  </div>
+                  <span
+                    className={cn(
+                      "px-2 py-1 rounded-full text-[10px] font-bold uppercase",
+                      proker.status === "completed"
+                        ? "bg-green-100 text-green-700"
+                        : proker.status === "active"
+                          ? "bg-indigo-100 text-indigo-700"
+                          : "bg-gray-100 text-gray-600",
+                    )}
+                  >
+                    {proker.status}
+                  </span>
                 </div>
-                <span>PIC: {proker.picName}</span>
+
+                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                  {proker.title}
+                </h3>
+                <p className="text-sm text-gray-500 line-clamp-2 mb-4 h-10">
+                  {proker.description || "Tidak ada deskripsi."}
+                </p>
+
+                {/* Timeline & PIC */}
+                <div className="space-y-2 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Calendar size={14} />
+                    <span>
+                      {new Date(proker.startDate).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                      })}{" "}
+                      -{" "}
+                      {new Date(proker.endDate).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[8px] font-bold">
+                      {proker.picName.charAt(0)}
+                    </div>
+                    <span>PIC: {proker.picName}</span>
+                  </div>
+                </div>
+
+                {/* Arrow Icon */}
+                <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 text-indigo-500">
+                  <ArrowRight size={20} />
+                </div>
+              </Link>
+            ))}
+
+            {data.length === 0 && (
+              <div className="col-span-full py-20 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <Target className="mx-auto text-gray-300 mb-3" size={48} />
+                <p className="text-gray-500">
+                  Belum ada program kerja di divisi ini.
+                </p>
+                {user.role?.roleName === "Koordinator" && (
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="text-indigo-600 font-bold hover:underline mt-2"
+                  >
+                    Buat Proker Pertama
+                  </button>
+                )}
               </div>
-            </div>
-
-            {/* Arrow Icon */}
-            <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 text-indigo-500">
-              <ArrowRight size={20} />
-            </div>
-          </Link>
-        ))}
-
-        {data.length === 0 && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-            <Target className="mx-auto text-gray-300 mb-3" size={48} />
-            <p className="text-gray-500">
-              Belum ada program kerja di divisi ini.
-            </p>
-            {user.role?.roleName === "Koordinator" && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="text-indigo-600 font-bold hover:underline mt-2"
-              >
-                Buat Proker Pertama
-              </button>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* MODAL CREATE PROKER */}
       {isModalOpen && (

@@ -9,6 +9,7 @@ import {
   archives,
   financeRecords,
   lpjs,
+  reports,
   guestBooks,
   partners,
   activityLogs,
@@ -23,21 +24,31 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
 export async function getDashboardStats() {
-  const activeProkers = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(prokers)
-    .where(eq(prokers.status, "active"));
-
-  const completedProkers = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(prokers)
-    .where(eq(prokers.status, "completed"));
+  const [activeProkers, completedProkers, pendingReports, pendingLPJ] =
+    await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(prokers)
+        .where(eq(prokers.status, "active")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(prokers)
+        .where(eq(prokers.status, "completed")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(reports)
+        .where(eq(reports.status, "submitted")),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(lpjs)
+        .where(eq(lpjs.status, "submitted")),
+    ]);
 
   return {
     active: Number(activeProkers[0].count),
     completed: Number(completedProkers[0].count),
-    pendingReports: 2, // Dummy dulu
-    pendingLPJ: 1, // Dummy dulu
+    pendingReports: Number(pendingReports[0].count),
+    pendingLPJ: Number(pendingLPJ[0].count),
   };
 }
 
@@ -62,18 +73,87 @@ export async function getTimelineData() {
 }
 
 export async function getAttentionItems() {
-  // Contoh: Ambil proker yang deadline-nya < 3 hari lagi tapi belum Done
+  // 1. Proker yang deadline-nya < 3 hari lagi tapi belum Done
   const urgentProkers = await db.query.prokers.findMany({
     where: sql`${prokers.endDate} > NOW() AND ${prokers.endDate} < NOW() + INTERVAL '3 DAYS' AND ${prokers.status} != 'completed'`,
     limit: 3,
   });
 
-  return urgentProkers.map((p) => ({
-    id: p.id,
+  const prokerItems = urgentProkers.map((p) => ({
+    id: `proker-${p.id}`,
     title: `Deadline: ${p.title}`,
-    subtitle: `H-2 Deadline (${new Date(p.endDate!).toLocaleDateString()})`,
+    subtitle: `H-2 Deadline (${new Date(p.endDate!).toLocaleDateString("id-ID")})`,
     link: `/dashboard/proker/${p.id}`,
     type: "proker" as const,
+  }));
+
+  // 2. Laporan yang submitted (butuh approval Ketua)
+  const pendingReportsList = await db
+    .select({
+      id: reports.id,
+      title: reports.title,
+      prokerTitle: prokers.title,
+      createdAt: reports.createdAt,
+    })
+    .from(reports)
+    .leftJoin(prokers, eq(reports.prokerId, prokers.id))
+    .where(eq(reports.status, "submitted"))
+    .orderBy(desc(reports.createdAt))
+    .limit(3);
+
+  const reportItems = pendingReportsList.map((r) => ({
+    id: `report-${r.id}`,
+    title: r.title || `Laporan ${r.prokerTitle}`,
+    subtitle: `Menunggu approval`,
+    link: `/dashboard/approval`,
+    type: "laporan" as const,
+  }));
+
+  // 3. LPJ yang submitted (butuh approval Ketua)
+  const pendingLpjList = await db
+    .select({
+      id: lpjs.id,
+      prokerTitle: prokers.title,
+      createdAt: lpjs.createdAt,
+    })
+    .from(lpjs)
+    .leftJoin(prokers, eq(lpjs.prokerId, prokers.id))
+    .where(eq(lpjs.status, "submitted"))
+    .orderBy(desc(lpjs.createdAt))
+    .limit(3);
+
+  const lpjItems = pendingLpjList.map((l) => ({
+    id: `lpj-${l.id}`,
+    title: `LPJ: ${l.prokerTitle}`,
+    subtitle: `Menunggu approval`,
+    link: `/dashboard/approval`,
+    type: "lpj" as const,
+  }));
+
+  return [...prokerItems, ...reportItems, ...lpjItems];
+}
+
+export async function getRecentActivity() {
+  const recentLogs = await db
+    .select({
+      id: activityLogs.id,
+      userName: users.name,
+      notes: activityLogs.notes,
+      prokerTitle: prokers.title,
+      createdAt: activityLogs.createdAt,
+    })
+    .from(activityLogs)
+    .leftJoin(users, eq(activityLogs.createdBy, users.id))
+    .leftJoin(prokers, eq(activityLogs.prokerId, prokers.id))
+    .orderBy(desc(activityLogs.createdAt))
+    .limit(5);
+
+  return recentLogs.map((log) => ({
+    id: log.id,
+    userName: log.userName || "Unknown",
+    notes: log.notes,
+    prokerTitle: log.prokerTitle || "-",
+    createdAt: log.createdAt?.toISOString() || new Date().toISOString(),
   }));
 }
 export async function getRisetStats(divisionId: number) {

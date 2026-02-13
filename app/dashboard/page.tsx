@@ -21,6 +21,7 @@ import {
   getDashboardStats,
   getTimelineData,
   getAttentionItems,
+  getRecentActivity,
   getRisetStats,
   getSecretaryDashboardData,
   getTreasurerDashboardData,
@@ -38,7 +39,10 @@ export default async function DashboardPage() {
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
+  if (!authUser) {
+    redirect("/login");
+    return; // TypeScript: tells the compiler this code path ends here
+  }
 
   // Ambil Role User & DIVISI
   const userProfile = await db.query.users.findFirst({
@@ -58,15 +62,22 @@ export default async function DashboardPage() {
 
   // LOGIC KETUA
   if (roleName === "Ketua") {
-    // Jalankan 3 fungsi query secara paralel biar ngebut
-    const [stats, timelineData, attentionData] = await Promise.all([
+    // Jalankan query secara paralel biar ngebut
+    const [stats, timelineData, attentionData, activities] = await Promise.all([
       getDashboardStats(),
       getTimelineData(),
       getAttentionItems(),
+      getRecentActivity(),
     ]);
 
     return (
-      <KetuaView user={userProfile} stats={stats} attention={attentionData} />
+      <KetuaView
+        user={userProfile}
+        stats={stats}
+        attention={attentionData}
+        timelineData={timelineData}
+        activities={activities}
+      />
     );
   }
 
