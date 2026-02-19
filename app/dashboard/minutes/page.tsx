@@ -11,12 +11,30 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
 export default async function MinutesPage({
   searchParams,
 }: {
   searchParams: { q?: string };
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
+
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.authId, authUser.id),
+    with: { role: true },
+  });
+  const roleName = dbUser?.role?.roleName ?? "";
+  const canEdit = roleName === "Sekretaris" || roleName === "Ketua";
+
   const query = searchParams.q || "";
   const data = await getMinutes(query);
 
@@ -32,7 +50,10 @@ export default async function MinutesPage({
         </div>
         <Link
           href="/dashboard/minutes/create"
-          className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition-colors"
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition-colors",
+            !canEdit && "hidden",
+          )}
         >
           <Plus size={18} /> Buat Baru
         </Link>
@@ -117,17 +138,17 @@ export default async function MinutesPage({
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link
-                      href={`/dashboard/minutes/${item.id}/edit`}
-                      className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Pencil size={16} />
-                    </Link>
-                    {/* Delete Button (Perlu Client Component sebenernya, tapi form action simpel bisa disini) */}
-                    {/* Nanti kita bikin button delete terpisah atau pake modal kayak Tasks */}
-                  </div>
+                  {canEdit && (
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link
+                        href={`/dashboard/minutes/${item.id}/edit`}
+                        className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil size={16} />
+                      </Link>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

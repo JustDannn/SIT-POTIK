@@ -3,8 +3,9 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { getApprovals } from "./actions";
+import { getApprovals, getMySubmissions } from "./actions";
 import KetuaApprovalView from "./_views/KetuaApprovalView";
+import KoordinatorApprovalView from "./_views/KoordinatorApprovalView";
 
 export default async function ApprovalPage() {
   const supabase = await createClient();
@@ -28,10 +29,17 @@ export default async function ApprovalPage() {
     return <KetuaApprovalView data={approvalsData} />;
   }
 
-  // TODO: Nanti buat view buat Anggota (Upload Laporan) di sini
-  // if (roleName === 'Anggota') return <AnggotaLaporanView />
+  // Koordinator & Anggota: See their own submission statuses
+  if (roleName === "Koordinator" || roleName === "Anggota") {
+    const mySubmissions = await getMySubmissions(authUser.id);
+    return (
+      <KoordinatorApprovalView
+        data={mySubmissions}
+        userName={userProfile.name}
+      />
+    );
+  }
 
-  // Tampilan Default kalau bukan Ketua
   return (
     <div className="p-10 text-center">
       <h2 className="text-xl font-bold text-gray-400">

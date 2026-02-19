@@ -1,10 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import StatCard from "@/components/dashboard/widgets/StatCard";
 import AttentionWidget from "@/components/dashboard/widgets/AttentionWidget";
 import GanttChartWidget from "@/components/dashboard/widgets/GanttChartWidget";
-import { Filter, Calendar as CalendarIcon, Clock, User } from "lucide-react";
+import {
+  Filter,
+  Calendar as CalendarIcon,
+  Clock,
+  User,
+  ChevronDown,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface UserData {
   id: string;
@@ -72,11 +81,27 @@ export default function KetuaView({
   timelineData,
   activities,
 }: KetuaViewProps) {
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const monthName = now.toLocaleDateString("id-ID", { month: "short" });
   const lastDay = new Date(currentYear, now.getMonth() + 1, 0).getDate();
   const dateLabel = `1 ${monthName} - ${lastDay} ${monthName} ${currentYear}`;
+
+  // Filter timeline data by status
+  const filteredTimeline = useMemo(() => {
+    if (statusFilter === "all") return timelineData;
+    return timelineData.filter((item) => item.status === statusFilter);
+  }, [timelineData, statusFilter]);
+
+  const statusOptions = [
+    { value: "all", label: "Semua" },
+    { value: "active", label: "Aktif" },
+    { value: "created", label: "Planning" },
+    { value: "completed", label: "Selesai" },
+  ];
 
   return (
     <div className="space-y-8 pb-10">
@@ -88,12 +113,79 @@ export default function KetuaView({
 
         {/* Filter Tools */}
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 shadow-sm">
+          {/* Calendar Button -> Links to Gantt Chart */}
+          <Link
+            href="/dashboard/proker?view=gantt"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 shadow-sm transition-colors"
+          >
             <CalendarIcon size={16} /> {dateLabel}
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 shadow-sm">
-            <Filter size={16} /> Filter
-          </button>
+          </Link>
+
+          {/* Filter Button -> Toggle dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 bg-white border rounded-lg text-sm shadow-sm transition-colors",
+                statusFilter !== "all"
+                  ? "border-orange-300 text-orange-600 bg-orange-50"
+                  : "border-gray-200 text-gray-600 hover:bg-gray-50",
+              )}
+            >
+              <Filter size={16} />
+              {statusFilter === "all"
+                ? "Filter"
+                : statusOptions.find((o) => o.value === statusFilter)?.label}
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "transition-transform",
+                  isFilterOpen && "rotate-180",
+                )}
+              />
+            </button>
+
+            {isFilterOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setIsFilterOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-40 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {statusOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setStatusFilter(opt.value);
+                        setIsFilterOpen(false);
+                      }}
+                      className={cn(
+                        "w-full px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
+                        statusFilter === opt.value
+                          ? "text-orange-600 font-semibold bg-orange-50/50"
+                          : "text-gray-700",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                  {statusFilter !== "all" && (
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={() => {
+                          setStatusFilter("all");
+                          setIsFilterOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-sm text-left text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2"
+                      >
+                        <X size={14} /> Reset Filter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -118,7 +210,7 @@ export default function KetuaView({
         {/* Gantt Chart & Activity Feed */}
         <div className="lg:col-span-2 space-y-6">
           {/* Gantt Chart - Proker Overview */}
-          <GanttChartWidget data={timelineData} />
+          <GanttChartWidget data={filteredTimeline} />
 
           {/* Aktivitas Organisasi Terbaru */}
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">

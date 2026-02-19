@@ -4,6 +4,7 @@ import Sidebar from "@/components/layout/sidebar";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { AuthProvider } from "@/lib/context/AuthContext";
 
 export default async function DashboardLayout({
   children,
@@ -41,7 +42,9 @@ export default async function DashboardLayout({
       <Sidebar user={userProfile} />
 
       {/* Area Konten Utama */}
-      <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      <div className="flex-1 overflow-y-auto p-8">
+        <AuthProvider>{children}</AuthProvider>
+      </div>
     </div>
   );
 }

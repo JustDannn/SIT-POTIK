@@ -3,8 +3,9 @@
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { updateSiteConfig, createSiteConfig } from "../actions";
+import { updateSiteConfig } from "../actions";
 import RichTextEditor from "@/components/RichTextEditor";
+import Image from "next/image";
 import {
   Save,
   Loader2,
@@ -15,7 +16,6 @@ import {
   Link as LinkIcon,
   Code,
   FileText,
-  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -149,7 +149,7 @@ export default function CMSEditorForm({
             <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
               {previews[config.id] || currentValue ? (
                 <>
-                  <img
+                  <Image
                     src={previews[config.id] || currentValue}
                     alt={config.label || config.key}
                     className="w-full h-full object-cover"

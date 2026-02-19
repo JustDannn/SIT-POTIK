@@ -1,5 +1,6 @@
 import {
   pgTable,
+  pgSchema,
   serial,
   text,
   timestamp,
@@ -11,6 +12,12 @@ import {
   bigint,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+const authSchema = pgSchema("auth");
+
+const authUsers = authSchema.table("users", {
+  id: uuid("id").primaryKey(),
+});
 
 // MEDIA & BRANDING ENUMS
 export const designRequestStatusEnum = pgEnum("design_request_status", [
@@ -148,7 +155,9 @@ export const divisions = pgTable("divisions", {
 });
 
 export const users = pgTable("users", {
-  id: uuid("user_id").primaryKey().defaultRandom(),
+  id: uuid("user_id")
+    .primaryKey()
+    .references(() => authUsers.id),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   image: text("image"),

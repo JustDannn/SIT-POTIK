@@ -97,12 +97,9 @@ const PRIORITY_BADGES = {
   low: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-export default function RequestKanban({
-  requests,
-  mediaTeamMembers = [],
-}: RequestKanbanProps) {
+export default function RequestKanban({ requests = [] }: RequestKanbanProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [draggedItem, setDraggedItem] = useState<DesignRequest | null>(null);
 
   const groupedRequests = useMemo(() => {

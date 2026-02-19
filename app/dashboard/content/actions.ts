@@ -1,8 +1,14 @@
 "use server";
 
 import { db } from "@/db";
-import { contentPlans, publications, users, divisions } from "@/db/schema";
-import { desc, eq, and, or } from "drizzle-orm";
+import {
+  contentPlans,
+  publications,
+  users,
+  divisions,
+  designRequests,
+} from "@/db/schema";
+import { desc, eq, and, or, sql } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -13,25 +19,47 @@ export async function getContentList() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { role: null, data: [] };
+  if (!user) return { role: null, data: [], userId: null };
 
   const userProfile = await db.query.users.findFirst({
     where: eq(users.id, user.id),
     with: { role: true, division: true },
   });
 
-  if (!userProfile?.role) return { role: null, data: [] };
+  if (!userProfile?.role) return { role: null, data: [], userId: null };
 
-  // LOGIC KETUA (Liat Content Plan Sosmed)
-  if (userProfile.role.roleName === "Ketua") {
-    const data = await db.query.contentPlans.findMany({
+  const roleName = userProfile.role.roleName;
+
+  // LOGIC KETUA — Fetch dynamic content from division outputs
+  if (roleName === "Ketua") {
+    // Fetch content plans (from Media & Branding)
+    const contentPlanData = await db.query.contentPlans.findMany({
       orderBy: [desc(contentPlans.scheduledDate)],
       with: { pic: true },
     });
 
+    // Fetch recent publications (from Riset, PR & SDM)
+    const pubData = await db
+      .select({
+        id: publications.id,
+        title: publications.title,
+        category: publications.category,
+        status: publications.status,
+        createdAt: publications.createdAt,
+        slug: publications.slug,
+        authorName: users.name,
+        divisionName: divisions.divisionName,
+      })
+      .from(publications)
+      .leftJoin(users, eq(publications.authorId, users.id))
+      .leftJoin(divisions, eq(publications.divisionId, divisions.id))
+      .orderBy(desc(publications.createdAt))
+      .limit(20);
+
     return {
       role: "Ketua",
-      data: data.map((c) => ({
+      userId: user.id,
+      data: contentPlanData.map((c) => ({
         id: c.id,
         title: c.title,
         channel: c.channel,
@@ -41,17 +69,18 @@ export async function getContentList() {
         assetUrl: c.assetUrl,
         caption: c.caption,
       })),
+      publications: pubData,
     };
   }
 
-  // KOORDINATOR (PR & SDM) - Liat Publikasi (Artikel/Press Release)
-  if (userProfile.role.roleName === "Koordinator") {
+  // KOORDINATOR — Filter by division
+  if (roleName === "Koordinator" && userProfile.divisionId) {
     const data = await db
       .select({
         id: publications.id,
         title: publications.title,
-        category: publications.category, // Artikel, Press Release
-        status: publications.status, // draft, review, published
+        category: publications.category,
+        status: publications.status,
         createdAt: publications.createdAt,
         publishedAt: publications.publishedAt,
         slug: publications.slug,
@@ -59,16 +88,14 @@ export async function getContentList() {
       })
       .from(publications)
       .leftJoin(users, eq(publications.authorId, users.id))
-      .where(eq(publications.divisionId, userProfile.divisionId!)) // Filter by Division
+      .where(eq(publications.divisionId, userProfile.divisionId))
       .orderBy(desc(publications.createdAt));
 
-    return {
-      role: "Koordinator",
-      data: data,
-    };
+    return { role: "Koordinator", data, userId: user.id };
   }
 
-  return { role: "Anggota", data: [] };
+  // ALL OTHER ROLES — can still view and request content
+  return { role: roleName, data: [], userId: user.id };
 }
 
 export async function createContent(formData: FormData) {
@@ -166,4 +193,39 @@ export async function updateContent(id: number, formData: FormData) {
 
   revalidatePath("/dashboard/content");
   redirect("/dashboard/content");
+}
+
+/**
+ * Submit a content request to the Media & Branding division.
+ * Available to ALL roles.
+ */
+export async function submitContentRequest(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const priority = (formData.get("priority") as string) || "normal";
+  const deadline = formData.get("deadline") as string;
+
+  try {
+    await db.insert(designRequests).values({
+      title,
+      description,
+      requestedBy: user.id,
+      priority: priority as "low" | "normal" | "high" | "urgent",
+      status: "pending",
+      deadline: deadline ? new Date(deadline) : null,
+    });
+
+    revalidatePath("/dashboard/content");
+    revalidatePath("/dashboard/media/requests");
+    return { success: true };
+  } catch (error) {
+    console.error("Submit content request error:", error);
+    return { success: false, error: "Gagal mengirim request." };
+  }
 }

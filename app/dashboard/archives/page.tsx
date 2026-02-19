@@ -11,12 +11,31 @@ import {
   File,
 } from "lucide-react";
 import { DeleteButton } from "./_components/DeleteButton";
+import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export default async function ArchivesPage({
   searchParams,
 }: {
   searchParams: { q?: string; cat?: string };
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
+
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.authId, authUser.id),
+    with: { role: true },
+  });
+  const roleName = dbUser?.role?.roleName ?? "";
+  const canManage = roleName === "Sekretaris" || roleName === "Ketua";
+
   const query = searchParams.q || "";
   const category = searchParams.cat || "all";
 
@@ -34,7 +53,10 @@ export default async function ArchivesPage({
         </div>
         <Link
           href="/dashboard/archives/upload"
-          className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition-colors"
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition-colors",
+            !canManage && "hidden",
+          )}
         >
           <Plus size={18} /> Upload Dokumen
         </Link>
@@ -143,7 +165,9 @@ export default async function ArchivesPage({
                       <Download size={16} />
                     </a>
                     {/* Komponen Delete Button Client Side */}
-                    <DeleteButton id={item.id} fileUrl={item.fileUrl || ""} />
+                    {canManage && (
+                      <DeleteButton id={item.id} fileUrl={item.fileUrl || ""} />
+                    )}
                   </div>
                 </td>
               </tr>

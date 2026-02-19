@@ -3,7 +3,11 @@ import Link from "next/link";
 import { getProkerTransactions } from "../actions";
 import { ArrowLeft, Plus, Download, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const formatRupiah = (num: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -17,6 +21,18 @@ export default async function ProkerFinanceDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
+
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.authId, authUser.id),
+    with: { role: true },
+  });
+  const canEdit = dbUser?.role?.roleName === "Bendahara";
+
   const { id } = await params;
   const { proker, transactions } = await getProkerTransactions(Number(id));
 
@@ -38,12 +54,14 @@ export default async function ProkerFinanceDetailPage({
             Divisi {proker.division.divisionName}
           </p>
         </div>
-        <Link
-          href={`/dashboard/finance/proker/${id}/add`}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black font-medium transition-colors"
-        >
-          <Plus size={16} /> Catat Transaksi
-        </Link>
+        {canEdit && (
+          <Link
+            href={`/dashboard/finance/proker/${id}/add`}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black font-medium transition-colors"
+          >
+            <Plus size={16} /> Catat Transaksi
+          </Link>
+        )}
       </div>
 
       {/* TABLE */}

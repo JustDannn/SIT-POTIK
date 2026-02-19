@@ -15,11 +15,17 @@ export default async function ContentPage() {
   } = await supabase.auth.getUser();
   if (!authUser) redirect("/login");
 
-  const { role, data } = await getContentList();
+  const result = await getContentList();
+  const { role, data } = result;
 
-  // View KETUA (Social Media Plan)
+  // View KETUA (Social Media Plan + cross-division publications)
   if (role === "Ketua") {
-    return <KetuaContentView data={data} />;
+    return (
+      <KetuaContentView
+        data={data}
+        publications={(result as any).publications ?? []}
+      />
+    );
   }
 
   // View KOORDINATOR (Artikel & Publikasi Web)
@@ -27,9 +33,6 @@ export default async function ContentPage() {
     return <KoordinatorContentView data={data} />;
   }
 
-  return (
-    <div className="p-10 text-center text-gray-400">
-      Anda tidak memiliki akses ke fitur konten.
-    </div>
-  );
+  // ALL OTHER ROLES — Can request content from Media & Branding
+  return <KoordinatorContentView data={data} />;
 }

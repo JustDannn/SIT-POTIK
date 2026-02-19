@@ -87,7 +87,6 @@ export default function BrandKitGallery({ brandKits }: BrandKitGalleryProps) {
   // UI State
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<BrandKit | null>(null);
 
   // Upload Form State
   const [uploadForm, setUploadForm] = useState<{

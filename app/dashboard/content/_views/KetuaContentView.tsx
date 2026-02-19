@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import {
   Calendar,
   Instagram,
@@ -10,6 +11,8 @@ import {
   Clock,
   CheckCircle,
   Loader,
+  FileText,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 const getChannelIcon = (channel: string) => {
@@ -33,7 +36,13 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-export default function KetuaContentView({ data }: { data: any[] }) {
+export default function KetuaContentView({
+  data,
+  publications = [],
+}: {
+  data: any[];
+  publications?: any[];
+}) {
   const now = new Date();
   const upcoming = data.filter(
     (d) => new Date(d.date) > now || d.status !== "published",
@@ -52,9 +61,12 @@ export default function KetuaContentView({ data }: { data: any[] }) {
             Pantau jadwal postingan media sosial.
           </p>
         </div>
-        <button className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800">
+        <Link
+          href="/dashboard/content/create"
+          className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800"
+        >
           + Request Konten
-        </button>
+        </Link>
       </div>
 
       {/*UPCOMING*/}
@@ -174,6 +186,54 @@ export default function KetuaContentView({ data }: { data: any[] }) {
           ))}
         </div>
       </div>
+
+      {/* PUBLIKASI DARI DIVISI */}
+      {publications.length > 0 && (
+        <div>
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <FileText size={20} className="text-indigo-500" /> Publikasi dari
+            Divisi Lain
+          </h2>
+          <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+            {publications.map((pub: any) => (
+              <div
+                key={pub.id}
+                className="p-4 flex items-center justify-between hover:bg-gray-50"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+                    <Send size={16} className="text-indigo-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">{pub.title}</h4>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {pub.divisionName ?? "—"} &middot;{" "}
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          pub.status === "published"
+                            ? "text-green-600"
+                            : pub.status === "done"
+                              ? "text-blue-600"
+                              : "text-gray-500",
+                        )}
+                      >
+                        {pub.status}
+                      </span>{" "}
+                      &middot;{" "}
+                      {new Date(pub.createdAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

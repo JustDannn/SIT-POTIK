@@ -381,9 +381,22 @@ export default function KetuaOverviewView({
                   <select
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-orange-500"
                     value={editingUser.roleId || ""}
-                    onChange={(e) =>
-                      setEditingUser({ ...editingUser, roleId: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newRoleId = e.target.value;
+                      const newRole = roles.find(
+                        (r: any) => String(r.id) === newRoleId,
+                      );
+                      const isNonDiv = [
+                        "Ketua",
+                        "Sekretaris",
+                        "Bendahara",
+                      ].includes(newRole?.roleName);
+                      setEditingUser({
+                        ...editingUser,
+                        roleId: newRoleId,
+                        divisionId: isNonDiv ? null : editingUser.divisionId,
+                      });
+                    }}
                   >
                     {roles.map((r: any) => (
                       <option key={r.id} value={r.id}>
@@ -396,23 +409,39 @@ export default function KetuaOverviewView({
                   <label className="block text-sm font-semibold text-gray-900 mb-1">
                     Divisi
                   </label>
-                  <select
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-orange-500"
-                    value={editingUser.divisionId || ""}
-                    onChange={(e) =>
-                      setEditingUser({
-                        ...editingUser,
-                        divisionId: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Tanpa Divisi</option>
-                    {divisions.map((d: any) => (
-                      <option key={d.id} value={d.id}>
-                        {d.divisionName}
-                      </option>
-                    ))}
-                  </select>
+                  {(() => {
+                    const selectedRole = roles.find(
+                      (r: any) => String(r.id) === String(editingUser.roleId),
+                    );
+                    const isNonDivisionRole = [
+                      "Ketua",
+                      "Sekretaris",
+                      "Bendahara",
+                    ].includes(selectedRole?.roleName);
+                    return isNonDivisionRole ? (
+                      <div className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-400 cursor-not-allowed">
+                        Tidak memerlukan divisi
+                      </div>
+                    ) : (
+                      <select
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-orange-500"
+                        value={editingUser.divisionId || ""}
+                        onChange={(e) =>
+                          setEditingUser({
+                            ...editingUser,
+                            divisionId: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Tanpa Divisi</option>
+                        {divisions.map((d: any) => (
+                          <option key={d.id} value={d.id}>
+                            {d.divisionName}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  })()}
                 </div>
               </div>
 

@@ -16,6 +16,8 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
+  LayoutList,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { deletePublication } from "../actions";
@@ -56,6 +58,19 @@ const Toast = ({
   );
 };
 
+const statusBadge = (status: string) => {
+  switch (status) {
+    case "published":
+      return "bg-green-50 text-green-700 border-green-200";
+    case "review":
+      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    case "done":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    default:
+      return "bg-gray-50 text-gray-500 border-gray-200";
+  }
+};
+
 export default function PublicationsListView({
   initialData,
 }: {
@@ -63,6 +78,7 @@ export default function PublicationsListView({
 }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [viewMode, setViewMode] = useState<"list" | "gallery">("list");
 
   // State untuk Modal & Loading
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
@@ -73,6 +89,12 @@ export default function PublicationsListView({
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  // Extract unique categories
+  const categories = [
+    "All",
+    ...Array.from(new Set(initialData.map((i) => i.category))),
+  ];
 
   // Filter Logic
   const filteredData = initialData.filter((item) => {
@@ -106,7 +128,7 @@ export default function PublicationsListView({
       setNotification({ type: "error", message: "Terjadi kesalahan sistem." });
     } finally {
       setIsDeleting(false);
-      setItemToDelete(null); // Tutup modal
+      setItemToDelete(null);
     }
   };
 
@@ -138,15 +160,52 @@ export default function PublicationsListView({
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <select
-            className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm cursor-pointer"
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <option value="All">Semua Tipe</option>
-            <option value="Artikel">Artikel</option>
-            <option value="Infografis">Infografis</option>
-          </select>
+        <div className="flex gap-2 items-center">
+          {/* TYPE TOGGLE BUTTONS */}
+          <div className="flex bg-gray-100 p-0.5 rounded-lg">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                  filter === cat
+                    ? "bg-white shadow-sm text-gray-900"
+                    : "text-gray-500 hover:text-gray-700",
+                )}
+              >
+                {cat === "All" ? "Semua" : cat}
+              </button>
+            ))}
+          </div>
+
+          {/* VIEW TOGGLE */}
+          <div className="flex bg-gray-100 p-0.5 rounded-lg">
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-1.5 rounded-md transition-all",
+                viewMode === "list"
+                  ? "bg-white shadow-sm text-gray-900"
+                  : "text-gray-400 hover:text-gray-600",
+              )}
+              title="Tampilan List"
+            >
+              <LayoutList size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode("gallery")}
+              className={cn(
+                "p-1.5 rounded-md transition-all",
+                viewMode === "gallery"
+                  ? "bg-white shadow-sm text-gray-900"
+                  : "text-gray-400 hover:text-gray-600",
+              )}
+              title="Tampilan Gallery"
+            >
+              <LayoutGrid size={16} />
+            </button>
+          </div>
 
           <Link
             href="/dashboard/publications/create"
@@ -157,117 +216,211 @@ export default function PublicationsListView({
         </div>
       </div>
 
-      {/* TABLE DATA */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
-            <tr>
-              <th className="px-6 py-4">Judul Konten</th>
-              <th className="px-6 py-4">Kategori</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Tanggal</th>
-              <th className="px-6 py-4 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredData.map((item) => (
-              <tr
-                key={item.id}
-                className="hover:bg-gray-50 transition-colors group"
-              >
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
+      {/* EMPTY STATE */}
+      {filteredData.length === 0 && (
+        <div className="p-12 text-center bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText size={32} className="text-gray-400" />
+          </div>
+          <h3 className="text-gray-900 font-medium">Belum ada publikasi</h3>
+          <p className="text-gray-500 text-sm mt-1">
+            Buat publikasi baru untuk menampilkannya di sini.
+          </p>
+        </div>
+      )}
+
+      {/* === LIST VIEW === */}
+      {filteredData.length > 0 && viewMode === "list" && (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-4">Judul Konten</th>
+                <th className="px-6 py-4">Kategori</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Tanggal</th>
+                <th className="px-6 py-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredData.map((item) => (
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50 transition-colors group"
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center border shrink-0",
+                          item.category === "Infografis"
+                            ? "bg-purple-50 text-purple-600 border-purple-100"
+                            : "bg-blue-50 text-blue-600 border-blue-100",
+                        )}
+                      >
+                        {item.category === "Infografis" ? (
+                          <ImageIcon size={18} />
+                        ) : (
+                          <FileText size={18} />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 line-clamp-1">
+                          {item.title}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Oleh: {item.author?.name || "Unknown"}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                      {item.category}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
                       className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center border shrink-0",
-                        item.category === "Infografis"
-                          ? "bg-purple-50 text-purple-600 border-purple-100"
-                          : "bg-blue-50 text-blue-600 border-blue-100",
+                        "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
+                        statusBadge(item.status),
                       )}
                     >
-                      {item.category === "Infografis" ? (
-                        <ImageIcon size={18} />
-                      ) : (
-                        <FileText size={18} />
+                      {item.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-500">
+                    {new Date(item.createdAt).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {item.status === "published" && (
+                        <Link
+                          href={`/publications/${item.slug}`}
+                          target="_blank"
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                          title="Lihat di Web"
+                        >
+                          <Eye size={16} />
+                        </Link>
                       )}
+                      <Link
+                        href={`/dashboard/publications/${item.id}/edit`}
+                        className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </Link>
+                      <button
+                        onClick={() => requestDelete(item.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        title="Hapus"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900 line-clamp-1">
-                        {item.title}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Oleh: {item.author?.name || "Unknown"}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                    {item.category}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={cn(
-                      "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-                      item.status === "published"
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : item.status === "review"
-                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                          : "bg-gray-50 text-gray-500 border-gray-200",
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* === GALLERY VIEW === */}
+      {filteredData.length > 0 && viewMode === "gallery" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredData.map((item) => (
+            <div
+              key={item.id}
+              className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-orange-200 transition-all duration-300"
+            >
+              {/* Thumbnail */}
+              <div className="h-44 bg-gray-100 relative overflow-hidden">
+                {item.thumbnailUrl ? (
+                  <img
+                    src={item.thumbnailUrl}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    {item.category === "Infografis" ? (
+                      <ImageIcon size={48} className="text-gray-300" />
+                    ) : (
+                      <FileText size={48} className="text-gray-300" />
                     )}
-                  >
-                    {item.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-500">
-                  {new Date(item.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  </div>
+                )}
+
+                {/* Status Badge Overlay */}
+                <span
+                  className={cn(
+                    "absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-sm",
+                    statusBadge(item.status),
+                  )}
+                >
+                  {item.status}
+                </span>
+
+                {/* Actions Overlay */}
+                <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {item.status === "published" && (
                     <Link
                       href={`/publications/${item.slug}`}
                       target="_blank"
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                      title="Lihat di Web"
+                      className="p-1.5 bg-white/90 backdrop-blur-sm text-gray-600 hover:text-blue-600 rounded-lg shadow-sm"
                     >
-                      <Eye size={16} />
+                      <Eye size={14} />
                     </Link>
+                  )}
+                  <Link
+                    href={`/dashboard/publications/${item.id}/edit`}
+                    className="p-1.5 bg-white/90 backdrop-blur-sm text-gray-600 hover:text-orange-600 rounded-lg shadow-sm"
+                  >
+                    <Edit size={14} />
+                  </Link>
+                  <button
+                    onClick={() => requestDelete(item.id)}
+                    className="p-1.5 bg-white/90 backdrop-blur-sm text-gray-600 hover:text-red-600 rounded-lg shadow-sm"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
 
-                    <Link
-                      href={`/dashboard/publications/${item.id}/edit`}
-                      className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
-                      title="Edit"
-                    >
-                      <Edit size={16} />
-                    </Link>
-
-                    <button
-                      onClick={() => requestDelete(item.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                      title="Hapus"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+              {/* Content */}
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                    {item.category}
+                  </span>
+                </div>
+                <h3 className="font-bold text-gray-900 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                  {item.title}
+                </h3>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-3">
+                  <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold">
+                    {item.author?.name?.charAt(0) || "?"}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredData.length === 0 && (
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText size={32} className="text-gray-400" />
+                  <span>{item.author?.name?.split(" ")[0] || "Unknown"}</span>
+                  <span className="text-gray-300">&middot;</span>
+                  <span>
+                    {new Date(item.createdAt).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                </div>
+              </div>
             </div>
-            <h3 className="text-gray-900 font-medium">Belum ada publikasi</h3>
-            <p className="text-gray-500 text-sm mt-1">
-              Buat publikasi baru untuk menampilkannya di sini.
-            </p>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* MODAL KONFIRMASI HAPUS */}
       {itemToDelete && (

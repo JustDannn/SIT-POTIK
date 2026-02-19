@@ -38,7 +38,10 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
         icon: AlertCircle,
       },
       { title: "Konten Publikasi", href: "/dashboard/content", icon: PenTool },
+      { title: "Keuangan", href: "/dashboard/finance/proker", icon: Wallet },
       { title: "Ringkasan Org", href: "/dashboard/overview", icon: Building2 },
+      { title: "Notulensi", href: "/dashboard/minutes", icon: FileText },
+      { title: "Arsip Dokumen", href: "/dashboard/archives", icon: Archive },
     ];
   }
   if (role === "Koordinator") {
@@ -47,6 +50,13 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
       { title: "Task Management", href: "/dashboard/tasks", icon: CheckCircle },
       { title: "Log Aktivitas", href: "/dashboard/logs", icon: History },
       { title: "Laporan Divisi", href: "/dashboard/reports", icon: FileText },
+      {
+        title: "Status Pengajuan",
+        href: "/dashboard/approval",
+        icon: AlertCircle,
+      },
+      { title: "Notulensi", href: "/dashboard/minutes", icon: ScrollText },
+      { title: "Arsip Dokumen", href: "/dashboard/archives", icon: Archive },
     ];
 
     let divisionMenu: any[] = [];
@@ -158,6 +168,8 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
         icon: Building2,
       },
       { title: "LPJ", href: "/dashboard/lpj", icon: ScrollText },
+      { title: "Notulensi", href: "/dashboard/minutes", icon: FileText },
+      { title: "Arsip Dokumen", href: "/dashboard/archives", icon: Archive },
     ];
   }
 
@@ -167,5 +179,7 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     { title: "Proker Saya", href: "/dashboard/proker", icon: BarChart3 },
     { title: "Task Saya", href: "/dashboard/tasks", icon: CheckCircle },
     { title: "Log Aktivitas", href: "/dashboard/logs", icon: History },
+    { title: "Notulensi", href: "/dashboard/minutes", icon: ScrollText },
+    { title: "Arsip Dokumen", href: "/dashboard/archives", icon: Archive },
   ];
 };

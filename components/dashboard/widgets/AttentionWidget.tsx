@@ -22,7 +22,7 @@ export default function AttentionWidget({ items }: { items: AttentionItem[] }) {
           <h3 className="font-bold text-gray-800">Attention Needed</h3>
         </div>
         <Link
-          href="#"
+          href="/dashboard/approval"
           className="text-xs font-semibold text-orange-500 hover:text-orange-600"
         >
           See All

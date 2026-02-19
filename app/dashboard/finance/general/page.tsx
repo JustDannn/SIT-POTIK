@@ -11,6 +11,11 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
 
 const formatRupiah = (num: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -20,6 +25,19 @@ const formatRupiah = (num: number) =>
   }).format(num);
 
 export default async function GeneralFinancePage() {
+  const supabase = await createClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  if (!authUser) redirect("/login");
+
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.authId, authUser.id),
+    with: { role: true },
+  });
+  const roleName = dbUser?.role?.roleName ?? "";
+  const canEdit = roleName === "Bendahara";
+
   const { summary, transactions } = await getGeneralFinance();
 
   return (
@@ -44,7 +62,10 @@ export default async function GeneralFinancePage() {
         </div>
         <Link
           href="/dashboard/finance/general/add"
-          className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black font-medium transition-colors shadow-lg shadow-gray-200"
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black font-medium transition-colors shadow-lg shadow-gray-200",
+            !canEdit && "hidden",
+          )}
         >
           <Plus size={18} /> Catat Transaksi
         </Link>

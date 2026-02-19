@@ -2,13 +2,9 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Image from 'next/image'
+import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
-import {
-  uploadMediaAsset,
-  deleteMediaAsset,
-  updateMediaAsset,
-} from "../actions";
+import { uploadMediaAsset, deleteMediaAsset } from "../actions";
 import {
   Image as ImageIcon,
   Video,
@@ -64,10 +60,7 @@ const TYPE_COLORS = {
   audio: "text-green-500 bg-green-50",
 };
 
-export default function AssetGallery({
-  assets,
-  folders,
-}: AssetGalleryProps) {
+export default function AssetGallery({ assets, folders }: AssetGalleryProps) {
   const router = useRouter();
   const supabase = createClient();
   const [isPending, startTransition] = useTransition();

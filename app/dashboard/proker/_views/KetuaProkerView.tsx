@@ -46,18 +46,32 @@ interface ProkerItem {
   type?: "proker" | "program";
 }
 
-export default function KetuaProkerView({ data }: { data: ProkerItem[] }) {
+export default function KetuaProkerView({
+  data,
+  initialView = "list",
+}: {
+  data: ProkerItem[];
+  initialView?: "list" | "gantt";
+}) {
   const [filter, setFilter] = useState("all");
+  const [divisionFilter, setDivisionFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "gantt">("list");
+  const [viewMode, setViewMode] = useState<"list" | "gantt">(initialView);
+
+  // Extract unique divisions dynamically
+  const divisions = Array.from(
+    new Set(data.map((item) => item.divisionName)),
+  ).sort();
 
   // Logic Filter Client-Side
   const filteredData = data.filter((item) => {
     const matchStatus = filter === "all" || item.status === filter;
+    const matchDivision =
+      divisionFilter === "all" || item.divisionName === divisionFilter;
     const matchSearch =
       item.title.toLowerCase().includes(search.toLowerCase()) ||
       item.divisionName.toLowerCase().includes(search.toLowerCase());
-    return matchStatus && matchSearch;
+    return matchStatus && matchDivision && matchSearch;
   });
 
   return (
@@ -90,7 +104,19 @@ export default function KetuaProkerView({ data }: { data: ProkerItem[] }) {
                 />
               </div>
               <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-                <Filter size={16} /> Filter Divisi
+                <Filter size={16} />
+                <select
+                  value={divisionFilter}
+                  onChange={(e) => setDivisionFilter(e.target.value)}
+                  className="bg-transparent outline-none cursor-pointer text-sm"
+                >
+                  <option value="all">Semua Divisi</option>
+                  {divisions.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
               </button>
             </>
           )}

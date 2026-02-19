@@ -9,7 +9,12 @@ import { getAllProkers } from "./actions";
 import KetuaProkerView from "./_views/KetuaProkerView";
 import KoordinatorProkerView from "./_views/KoordinatorProkerView";
 
-export default async function ProkerPage() {
+export default async function ProkerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const params = await searchParams;
   const supabase = await createClient();
 
   // Auth Check
@@ -35,7 +40,12 @@ export default async function ProkerPage() {
 
   // View KETUA (Melihat Semua)
   if (roleName === "Ketua") {
-    return <KetuaProkerView data={prokers as any} />;
+    return (
+      <KetuaProkerView
+        data={prokers as any}
+        initialView={params.view === "gantt" ? "gantt" : "list"}
+      />
+    );
   }
 
   // View KOORDINATOR / ANGGOTA (Melihat Divisi Sendiri)

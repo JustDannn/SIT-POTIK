@@ -165,8 +165,9 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-gray-800">Proker Overview</h3>
           <Link
-            href="/dashboard/proker"
+            href="/dashboard/proker?view=gantt"
             className="p-1 hover:bg-gray-100 rounded-full"
+            title="Lihat Gantt Chart lengkap"
           >
             <ChevronRight size={16} />
           </Link>
@@ -189,8 +190,9 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
           </p>
         </div>
         <Link
-          href="/dashboard/proker"
+          href="/dashboard/proker?view=gantt"
           className="p-1 hover:bg-gray-100 rounded-full transition"
+          title="Lihat Gantt Chart lengkap"
         >
           <ChevronRight size={16} className="text-gray-400" />
         </Link>

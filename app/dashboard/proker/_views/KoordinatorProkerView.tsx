@@ -7,6 +7,7 @@ import {
   Plus,
   Target,
   ArrowRight,
+  ArrowLeft,
   LayoutGrid,
   BarChart3,
   X,
@@ -30,6 +31,14 @@ export default function KoordinatorProkerView({
 
   return (
     <div className="space-y-6 pb-20">
+      {/* BACK LINK */}
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        <ArrowLeft size={16} /> Kembali ke Dashboard
+      </Link>
+
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
@@ -141,6 +150,26 @@ export default function KoordinatorProkerView({
 
                 {/* Timeline & PIC */}
                 <div className="space-y-2 pt-4 border-t border-gray-100">
+                  {/* Progress Bar */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-500">Progress</span>
+                      <span className="font-semibold text-gray-900">
+                        {proker.progress ?? 0}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all duration-500",
+                          proker.status === "completed"
+                            ? "bg-emerald-500"
+                            : "bg-indigo-500",
+                        )}
+                        style={{ width: `${proker.progress ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <Calendar size={14} />
                     <span>
