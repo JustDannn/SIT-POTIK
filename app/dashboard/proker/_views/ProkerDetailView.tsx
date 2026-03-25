@@ -22,6 +22,31 @@ import EventTeam from "../../events/[id]/_tabs/EventTeam";
 import EventTasks from "../../events/[id]/_tabs/EventTasks";
 import EventLogs from "../../events/[id]/_tabs/EventLogs";
 import EventImpact from "../../events/[id]/_tabs/EventImpact";
+import ProkerStatusDropdown from "../_components/ProkerStatusDropdown";
+
+type TeamParticipants = React.ComponentProps<typeof EventTeam>["participants"];
+type TaskItems = React.ComponentProps<typeof EventTasks>["tasks"];
+type LogItems = React.ComponentProps<typeof EventLogs>["logs"];
+type ImpactItems = React.ComponentProps<typeof EventImpact>["impacts"];
+
+interface ProkerDetail {
+  id: number;
+  type?: string;
+  title: string;
+  status: string | null;
+  divisionId?: number | null;
+  divisionName?: string | null;
+  description?: string | null;
+  progress: number;
+  participants?: TeamParticipants;
+  tasks?: TaskItems;
+  logs?: LogItems;
+  impacts?: ImpactItems;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+  location?: string | null;
+  picName?: string | null;
+}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -38,13 +63,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function ProkerDetailView({
-  proker,
-  user,
-}: {
-  proker: any;
-  user: any;
-}) {
+export default function ProkerDetailView({ proker }: { proker: ProkerDetail }) {
   const [activeTab, setActiveTab] = useState("overview");
   const isProgram = proker.type === "program";
 
@@ -73,7 +92,11 @@ export default function ProkerDetailView({
       </Link>
 
       {/* Header Card */}
-      <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm relative overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-3xl p-8 shadow-sm relative">
+        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        </div>
+
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div>
@@ -81,18 +104,17 @@ export default function ProkerDetailView({
                 <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-gray-100 text-gray-500 border border-gray-200">
                   {proker.divisionName}
                 </span>
-                <span
-                  className={cn(
-                    "px-2.5 py-1 rounded-full text-xs font-bold uppercase",
-                    getStatusColor(proker.status || "created"),
-                  )}
-                >
-                  {proker.status === "created" ? "planning" : proker.status}
-                </span>
               </div>
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-1">
-                {proker.title}
-              </h1>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-3xl font-extrabold text-gray-900">
+                  {proker.title}
+                </h1>
+
+                <ProkerStatusDropdown
+                  prokerId={proker.id}
+                  currentStatus={proker.status}
+                />
+              </div>
               {proker.description && (
                 <p className="text-gray-500 max-w-2xl text-sm mt-1">
                   {proker.description}
@@ -133,7 +155,6 @@ export default function ProkerDetailView({
             </div>
           </div>
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
       </div>
 
       {/* Tabs Navigation */}

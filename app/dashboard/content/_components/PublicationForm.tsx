@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import {
   Save,
   ArrowLeft,
@@ -23,12 +24,31 @@ import Link from "next/link";
 import { createContent, updateContent } from "../actions";
 import { cn } from "@/lib/utils";
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+}
+
+interface Publication {
+  id?: number;
+  title: string;
+  slug: string;
+  content: string;
+  category: string;
+  fileUrl?: string | null;
+  status?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export default function PublicationForm({
   user,
   initialData = null,
 }: {
-  user: any;
-  initialData?: any;
+  user: User;
+  initialData?: Publication | null;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -50,7 +70,6 @@ export default function PublicationForm({
     initialData?.fileUrl || null,
   );
 
-  // Auto-Generate Slug (Client Side Visual Only)
   useEffect(() => {
     if (!isEditing && formData.title) {
       const slug = formData.title
@@ -99,16 +118,21 @@ export default function PublicationForm({
       submitData.append("content", formData.content);
       submitData.append("fileUrl", fileUrl || "");
 
-      if (isEditing) {
+      if (isEditing && initialData && initialData.id) {
         await updateContent(initialData.id, submitData);
       } else {
         await createContent(submitData);
       }
     } catch (error) {
+      if (isRedirectError(error)) {
+        throw error;
+      }
       console.error(error);
       alert("Gagal menyimpan konten. Cek console.");
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
     }
   };
 

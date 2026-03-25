@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "urmwjziuaoapbhsvzjbq.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "awsimages.detik.net.id",
+      },
     ],
   },
 };

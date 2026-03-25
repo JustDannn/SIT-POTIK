@@ -18,33 +18,6 @@ interface GanttChartWidgetProps {
   data: ProkerItem[];
 }
 
-// Color palette by status
-const STATUS_COLORS: Record<
-  string,
-  { bg: string; border: string; text: string }
-> = {
-  active: {
-    bg: "bg-blue-100",
-    border: "border-blue-300",
-    text: "text-blue-800",
-  },
-  created: {
-    bg: "bg-gray-100",
-    border: "border-gray-300",
-    text: "text-gray-700",
-  },
-  completed: {
-    bg: "bg-emerald-100",
-    border: "border-emerald-300",
-    text: "text-emerald-800",
-  },
-  archived: {
-    bg: "bg-amber-100",
-    border: "border-amber-300",
-    text: "text-amber-800",
-  },
-};
-
 const DIVISION_COLORS = [
   { bg: "bg-violet-100", border: "border-violet-300", text: "text-violet-800" },
   { bg: "bg-sky-100", border: "border-sky-300", text: "text-sky-800" },
@@ -76,88 +49,87 @@ function formatMonthYear(date: Date): string {
 }
 
 export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
-  const { days, startEpoch, totalDays, monthLabel, todayOffset, rows } =
-    useMemo(() => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+  const { days, totalDays, monthLabel, todayOffset, rows } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-      // Show a window: 7 days before today to 21 days after = 28 days total
-      const windowStart = new Date(today);
-      windowStart.setDate(windowStart.getDate() - 7);
-      const windowEnd = new Date(today);
-      windowEnd.setDate(windowEnd.getDate() + 21);
+    // Show a window: 7 days before today to 21 days after = 28 days total
+    const windowStart = new Date(today);
+    windowStart.setDate(windowStart.getDate() - 7);
+    const windowEnd = new Date(today);
+    windowEnd.setDate(windowEnd.getDate() + 21);
 
-      const totalDays = 28;
-      const startEpoch = windowStart.getTime();
-      const dayMs = 86400000;
+    const totalDays = 28;
+    const startEpoch = windowStart.getTime();
+    const dayMs = 86400000;
 
-      // Generate day labels
-      const days: {
-        date: Date;
-        label: string;
-        isToday: boolean;
-        isWeekend: boolean;
-      }[] = [];
-      for (let i = 0; i < totalDays; i++) {
-        const d = new Date(windowStart.getTime() + i * dayMs);
-        const dayOfWeek = d.getDay();
-        days.push({
-          date: d,
-          label: formatDay(d),
-          isToday: d.getTime() === today.getTime(),
-          isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
-        });
-      }
+    // Generate day labels
+    const days: {
+      date: Date;
+      label: string;
+      isToday: boolean;
+      isWeekend: boolean;
+    }[] = [];
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(windowStart.getTime() + i * dayMs);
+      const dayOfWeek = d.getDay();
+      days.push({
+        date: d,
+        label: formatDay(d),
+        isToday: d.getTime() === today.getTime(),
+        isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+      });
+    }
 
-      // Today offset (fraction of total width)
-      const todayOffset =
-        ((today.getTime() - startEpoch) / (totalDays * dayMs)) * 100;
+    // Today offset (fraction of total width)
+    const todayOffset =
+      ((today.getTime() - startEpoch) / (totalDays * dayMs)) * 100;
 
-      // Month label
-      const monthLabel = formatMonthYear(today);
+    // Month label
+    const monthLabel = formatMonthYear(today);
 
-      // Calculate bar positions
-      const divisionMap = new Map<string, number>();
+    // Calculate bar positions
+    const divisionMap = new Map<string, number>();
 
-      const rows = data
-        .filter((p) => {
-          const s = toDate(p.startDate);
-          const e = toDate(p.endDate);
-          if (!s) return false;
-          const end = e || new Date(s.getTime() + dayMs);
-          // Filter out items completely outside the window
-          return (
-            end.getTime() >= windowStart.getTime() &&
-            s.getTime() <= windowEnd.getTime()
-          );
-        })
-        .map((p) => {
-          const s = toDate(p.startDate)!;
-          const e = toDate(p.endDate) || new Date(s.getTime() + dayMs);
+    const rows = data
+      .filter((p) => {
+        const s = toDate(p.startDate);
+        const e = toDate(p.endDate);
+        if (!s) return false;
+        const end = e || new Date(s.getTime() + dayMs);
+        // Filter out items completely outside the window
+        return (
+          end.getTime() >= windowStart.getTime() &&
+          s.getTime() <= windowEnd.getTime()
+        );
+      })
+      .map((p) => {
+        const s = toDate(p.startDate)!;
+        const e = toDate(p.endDate) || new Date(s.getTime() + dayMs);
 
-          // Clamp to window
-          const barStart = Math.max(s.getTime(), windowStart.getTime());
-          const barEnd = Math.min(e.getTime(), windowEnd.getTime());
+        // Clamp to window
+        const barStart = Math.max(s.getTime(), windowStart.getTime());
+        const barEnd = Math.min(e.getTime(), windowEnd.getTime());
 
-          const leftPct = ((barStart - startEpoch) / (totalDays * dayMs)) * 100;
-          const widthPct = ((barEnd - barStart) / (totalDays * dayMs)) * 100;
+        const leftPct = ((barStart - startEpoch) / (totalDays * dayMs)) * 100;
+        const widthPct = ((barEnd - barStart) / (totalDays * dayMs)) * 100;
 
-          const color = getDivisionColor(p.division, divisionMap);
+        const color = getDivisionColor(p.division, divisionMap);
 
-          return {
-            id: p.id,
-            title: p.title,
-            division: p.division,
-            status: p.status,
-            type: p.type,
-            leftPct: Math.max(0, leftPct),
-            widthPct: Math.max(1, widthPct), // min 1% so it's visible
-            color,
-          };
-        });
+        return {
+          id: p.id,
+          title: p.title,
+          division: p.division,
+          status: p.status,
+          type: p.type,
+          leftPct: Math.max(0, leftPct),
+          widthPct: Math.max(1, widthPct), // min 1% so it's visible
+          color,
+        };
+      });
 
-      return { days, startEpoch, totalDays, monthLabel, todayOffset, rows };
-    }, [data]);
+    return { days, startEpoch, totalDays, monthLabel, todayOffset, rows };
+  }, [data]);
 
   if (data.length === 0) {
     return (
@@ -200,7 +172,7 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
 
       {/* Gantt Chart Container */}
       <div className="relative w-full overflow-x-auto pb-2">
-        <div className="min-w-[700px]">
+        <div className="min-w-175">
           {/* Day Headers */}
           <div className="flex border-b border-gray-100 pb-2 mb-1">
             {days.map((day, i) => (
@@ -238,7 +210,7 @@ export default function GanttChartWidget({ data }: GanttChartWidgetProps) {
               className="absolute top-0 bottom-0 w-px bg-orange-400 z-10"
               style={{ left: `${todayOffset}%` }}
             >
-              <div className="absolute -top-1 -left-[3px] w-[7px] h-[7px] bg-orange-400 rounded-full border-2 border-white" />
+              <div className="absolute -top-1 -left-0.75 w-1.75 h-1.75 bg-orange-400 rounded-full border-2 border-white" />
             </div>
 
             {/* Proker Bars */}

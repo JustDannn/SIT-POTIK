@@ -332,7 +332,9 @@ export default function AssetGallery({ assets, folders }: AssetGalleryProps) {
                       <Image
                         src={asset.thumbnailUrl || asset.url}
                         alt={asset.filename}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 20vw"
+                        className="object-cover"
                       />
                     ) : (
                       <div
@@ -515,7 +517,9 @@ export default function AssetGallery({ assets, folders }: AssetGalleryProps) {
                 <Image
                   src={selectedAsset.url}
                   alt={selectedAsset.filename}
-                  className="w-full h-full object-contain"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  className="object-contain"
                 />
               ) : selectedAsset.type === "video" ? (
                 <video

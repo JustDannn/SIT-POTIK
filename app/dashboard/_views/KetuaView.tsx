@@ -224,7 +224,7 @@ export default function KetuaView({
                     key={act.id}
                     className="flex items-start gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0"
                   >
-                    <div className="mt-0.5 flex-shrink-0 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                    <div className="mt-0.5 shrink-0 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
                       <User size={14} className="text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">

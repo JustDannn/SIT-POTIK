@@ -16,12 +16,34 @@ import { createProker } from "../actions";
 import { cn } from "@/lib/utils";
 import ProkerGanttChart from "../_components/ProkerGanttChart";
 
+interface KoordinatorProkerItem {
+  id: number;
+  title: string;
+  description?: string | null;
+  divisionName?: string | null;
+  status?: "created" | "active" | "completed" | "archived" | string | null;
+  startDate: string | Date;
+  endDate: string | Date;
+  type?: "proker" | "program";
+  progress?: number | null;
+  picName: string;
+}
+
+interface KoordinatorUser {
+  role?: {
+    roleName?: string | null;
+  } | null;
+  division?: {
+    divisionName?: string | null;
+  } | null;
+}
+
 export default function KoordinatorProkerView({
   data,
   user,
 }: {
-  data: any[];
-  user: any;
+  data: KoordinatorProkerItem[];
+  user: KoordinatorUser;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "gantt">("card");

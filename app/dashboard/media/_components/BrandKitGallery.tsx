@@ -256,6 +256,7 @@ export default function BrandKitGallery({ brandKits }: BrandKitGalleryProps) {
                       src={item.thumbnailUrl || item.fileUrl}
                       alt={item.name}
                       fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 25vw"
                       className="object-contain p-4"
                     />
                   ) : (

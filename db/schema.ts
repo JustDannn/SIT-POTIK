@@ -724,3 +724,36 @@ export const campaignsRelations = relations(campaigns, ({ one }) => ({
     references: [designRequests.id],
   }),
 }));
+
+export const registrationTokens = pgTable("registration_tokens", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  roleId: integer("role_id")
+    .references(() => roles.id)
+    .notNull(),
+  divisionId: integer("division_id").references(() => divisions.id),
+  createdBy: uuid("created_by")
+    .references(() => users.id)
+    .notNull(),
+  isUsed: boolean("is_used").default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const registrationTokensRelations = relations(
+  registrationTokens,
+  ({ one }) => ({
+    creator: one(users, {
+      fields: [registrationTokens.createdBy],
+      references: [users.id],
+    }),
+    role: one(roles, {
+      fields: [registrationTokens.roleId],
+      references: [roles.id],
+    }),
+    division: one(divisions, {
+      fields: [registrationTokens.divisionId],
+      references: [divisions.id],
+    }),
+  }),
+);

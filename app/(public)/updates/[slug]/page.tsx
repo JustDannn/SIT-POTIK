@@ -40,7 +40,9 @@ export default async function ArticleDetailPage({
           <Image
             src={data.fileUrl}
             alt={data.title}
-            className="w-full h-full object-cover"
+            fill
+            sizes="100vw"
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent"></div>
         </div>

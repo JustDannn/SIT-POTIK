@@ -1,12 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useFormStatus } from "react-dom";
 import { motion } from "framer-motion";
 import { signUp } from "./actions";
-import { Lock, Mail, User, KeyRound, ArrowRight, Loader2 } from "lucide-react";
+import {
+  Lock,
+  Mail,
+  User,
+  KeyRound,
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
-import Background from "@/components/Background";
+import { useSearchParams } from "next/navigation";
+import Image from "next/image";
+import Background from "@/components/Background"; // Sesuaikan import lu
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -32,6 +42,30 @@ function SubmitButton() {
   );
 }
 
+// Komponen buat nangkep pesan error dari URL
+function ErrorAlert() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
+
+  if (!error) return null;
+
+  const errorMessages: Record<string, string> = {
+    invalid_domain: "Gunakan email @student.telkomuniversity.ac.id ya!",
+    invalid_token: "Token tidak valid atau tidak ditemukan.",
+    token_used: "Token ini sudah pernah digunakan.",
+    token_expired: "Yah, token ini sudah kadaluarsa.",
+    signup_failed: "Gagal mendaftar, pastikan email belum terdaftar.",
+    db_error: "Terjadi kesalahan pada sistem, coba lagi nanti.",
+  };
+
+  return (
+    <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">
+      <AlertCircle size={16} />
+      <p>{errorMessages[error] || "Terjadi kesalahan saat mendaftar."}</p>
+    </div>
+  );
+}
+
 export default function RegisterPage() {
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden p-4">
@@ -52,7 +86,6 @@ export default function RegisterPage() {
                 className="h-10 w-auto object-contain"
                 alt="Telkom"
               />
-              {/* Divider kecil */}
               <div className="h-8 w-px bg-gray-300"></div>
               <img
                 src="/logo-pojok.png"
@@ -70,12 +103,15 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Form dengan GRID 2 KOLOM */}
+          <Suspense fallback={<div className="h-10" />}>
+            <ErrorAlert />
+          </Suspense>
+
+          {/* Form */}
           <form action={signUp}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* Kolom Kiri */}
               <div className="space-y-4">
-                {/* Nama Lengkap */}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-700 ml-1">
                     Nama Lengkap
@@ -91,7 +127,6 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Email */}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-700 ml-1">
                     Email Student
@@ -111,7 +146,6 @@ export default function RegisterPage() {
 
               {/* Kolom Kanan */}
               <div className="space-y-4">
-                {/* Password */}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-700 ml-1">
                     Password
@@ -122,13 +156,13 @@ export default function RegisterPage() {
                       name="password"
                       type="password"
                       required
+                      minLength={6}
                       placeholder="Minimal 6 karakter"
                       className="block w-full rounded-xl border-0 bg-white/50 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                   </div>
                 </div>
 
-                {/* Token (Highlight) */}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-orange-600 ml-1">
                     Kode Token
@@ -139,14 +173,13 @@ export default function RegisterPage() {
                       name="token"
                       required
                       placeholder="Paste Token Disini"
-                      className="block w-full rounded-xl border-0 bg-orange-50/60 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-orange-200 placeholder:text-orange-300 focus:ring-2 focus:ring-orange-500 transition-all"
+                      className="block w-full rounded-xl border-0 bg-orange-50/60 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-orange-200 placeholder:text-orange-300 focus:ring-2 focus:ring-orange-500 transition-all uppercase"
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Tombol Submit Full Width di Bawah Grid */}
             <SubmitButton />
           </form>
 

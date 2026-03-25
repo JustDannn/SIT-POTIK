@@ -10,7 +10,7 @@ import {
   programs,
   programParticipants,
 } from "@/db/schema";
-import { desc, eq, and, ne } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server"; // Tambahan buat Auth
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -41,14 +41,11 @@ export async function getAllProkers() {
   let programWhereCondition = undefined;
 
   if (user) {
-    // Ambil detail user (role & divisi)
     const dbUser = await db.query.users.findFirst({
       where: eq(users.id, user.id),
       with: { role: true },
     });
 
-    // LOGIC FILTER:
-    // Kalau Koordinator atau Anggota, filter by Division ID
     if (
       dbUser &&
       (dbUser.role.roleName === "Koordinator" ||
@@ -59,32 +56,40 @@ export async function getAllProkers() {
         programWhereCondition = eq(programs.divisionId, dbUser.divisionId);
       }
     }
-    // Kalau Ketua/Sekben, whereCondition tetap undefined (alias ambil semua)
   }
 
-  // 1. Fetch prokers
+  // 1. Fetch prokers (Tambahin fetch tasks sekalian buat ngitung progress)
   const data = await db.query.prokers.findMany({
     where: whereCondition,
     orderBy: [desc(prokers.createdAt)],
     with: {
       division: true,
       pic: true,
+      tasks: true,
     },
   });
 
-  const prokerItems = data.map((p) => ({
-    id: p.id,
-    title: p.title,
-    description: p.description,
-    status: p.status,
-    startDate: p.startDate,
-    endDate: p.endDate,
-    divisionName: p.division?.divisionName || "Tanpa Divisi",
-    picName: p.pic?.name || "Belum ada PIC",
-    picEmail: p.pic?.email || "",
-    progress: p.status === "completed" ? 100 : p.status === "active" ? 50 : 0,
-    type: "proker" as const,
-  }));
+  const prokerItems = data.map((p) => {
+    // KALKULASI PROGRESS REAL-TIME DARI TASK
+    const totalTasks = p.tasks?.length || 0;
+    const doneTasks = p.tasks?.filter((t) => t.status === "done").length || 0;
+    const realProgress =
+      totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+    return {
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      status: p.status,
+      startDate: p.startDate,
+      endDate: p.endDate,
+      divisionName: p.division?.divisionName || "Tanpa Divisi",
+      picName: p.pic?.name || "Belum ada PIC",
+      picEmail: p.pic?.email || "",
+      progress: realProgress,
+      type: "proker" as const,
+    };
+  });
 
   // 2. Fetch programs (events) and merge
   const programQuery = db
@@ -106,9 +111,9 @@ export async function getAllProkers() {
         .orderBy(desc(programs.createdAt))
     : await programQuery.orderBy(desc(programs.createdAt));
 
-  // Get PIC for each program (first participant with role 'PIC')
   const programItems = await Promise.all(
     programData.map(async (p) => {
+      // Ambil PIC
       const pic = await db
         .select({ name: users.name, email: users.email })
         .from(programParticipants)
@@ -121,7 +126,21 @@ export async function getAllProkers() {
         )
         .limit(1);
 
+      // Ambil task buat ngitung progress
+      const progTasks = await db
+        .select()
+        .from(tasks)
+        .where(eq(tasks.programId, p.id));
+
+      const totalProgTasks = progTasks.length;
+      const doneProgTasks = progTasks.filter((t) => t.status === "done").length;
+      const realProgProgress =
+        totalProgTasks > 0
+          ? Math.round((doneProgTasks / totalProgTasks) * 100)
+          : 0;
+
       const mappedStatus = mapProgramStatus(p.status);
+
       return {
         id: p.id,
         title: p.title,
@@ -132,12 +151,7 @@ export async function getAllProkers() {
         divisionName: p.divisionName || "Tanpa Divisi",
         picName: pic[0]?.name || "Belum ada PIC",
         picEmail: pic[0]?.email || "",
-        progress:
-          mappedStatus === "completed"
-            ? 100
-            : mappedStatus === "active"
-              ? 50
-              : 0,
+        progress: realProgProgress,
         type: "program" as const,
       };
     }),
@@ -256,13 +270,10 @@ export async function toggleTaskStatus(
   } = await supabase.auth.getUser();
   if (!user) return;
 
-  const newStatus = currentStatus === "done" ? "todo" : "done";
+  const newStatus: "todo" | "done" = currentStatus === "done" ? "todo" : "done";
 
   // 1. Update Status
-  await db
-    .update(tasks)
-    .set({ status: newStatus as any })
-    .where(eq(tasks.id, taskId));
+  await db.update(tasks).set({ status: newStatus }).where(eq(tasks.id, taskId));
 
   // 2. Auto-Log: Catat perubahan status
   await db.insert(activityLogs).values({
@@ -292,4 +303,49 @@ export async function addManualLog(formData: FormData) {
   });
 
   revalidatePath(`/dashboard/proker/${prokerId}`);
+}
+// Tambahin ini di paling bawah actions.ts
+
+export async function updateProkerStatus(
+  prokerId: number,
+  newStatus: "created" | "active" | "completed" | "archived",
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  try {
+    await db
+      .update(prokers)
+      .set({ status: newStatus })
+      .where(eq(prokers.id, prokerId));
+
+    // Auto-Log: Catat bahwa status proker diubah
+    const statusLabel =
+      newStatus === "created"
+        ? "Planning"
+        : newStatus === "active"
+          ? "Aktif"
+          : newStatus === "completed"
+            ? "Selesai"
+            : "Diarsipkan";
+
+    await db.insert(activityLogs).values({
+      prokerId,
+      createdBy: user.id,
+      notes: `Mengubah status Program Kerja menjadi: ${statusLabel}`,
+    });
+
+    // Refresh halaman detail dan list
+    revalidatePath(`/dashboard/proker/${prokerId}`);
+    revalidatePath(`/dashboard/proker`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Gagal update status proker:", error);
+    return { success: false, error: "Gagal menyimpan perubahan status." };
+  }
 }

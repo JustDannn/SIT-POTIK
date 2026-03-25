@@ -8,7 +8,7 @@ import {
   divisions,
   designRequests,
 } from "@/db/schema";
-import { desc, eq, and, or, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -118,7 +118,7 @@ export async function createContent(formData: FormData) {
   }
 
   const title = formData.get("title") as string;
-  const category = formData.get("category") as any;
+  const category = formData.get("category") as string;
   const content = formData.get("content") as string;
   const fileUrl = formData.get("fileUrl") as string;
 
@@ -183,7 +183,7 @@ export async function updateContent(id: number, formData: FormData) {
     .update(publications)
     .set({
       title: title,
-      category: formData.get("category") as any,
+      category: formData.get("category") as string,
       content: formData.get("content") as string,
       fileUrl: formData.get("fileUrl") as string,
       slug: slug,
@@ -215,7 +215,7 @@ export async function submitContentRequest(formData: FormData) {
     await db.insert(designRequests).values({
       title,
       description,
-      requestedBy: user.id,
+      requesterId: user.id,
       priority: priority as "low" | "normal" | "high" | "urgent",
       status: "pending",
       deadline: deadline ? new Date(deadline) : null,
@@ -227,5 +227,31 @@ export async function submitContentRequest(formData: FormData) {
   } catch (error) {
     console.error("Submit content request error:", error);
     return { success: false, error: "Gagal mengirim request." };
+  }
+}
+export async function updateContentStatus(id: number, status: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  try {
+    await db
+      .update(publications)
+      .set({
+        status: status,
+        // Kalau statusnya published, catet tanggalnya sekalian
+        publishedAt: status === "published" ? new Date() : null,
+      })
+      .where(eq(publications.id, id));
+
+    // Refresh data di halaman content biar langsung berubah
+    revalidatePath("/dashboard/content");
+    return { success: true };
+  } catch (error) {
+    console.error("Gagal update status:", error);
+    return { success: false, error: "Gagal update status di database" };
   }
 }
