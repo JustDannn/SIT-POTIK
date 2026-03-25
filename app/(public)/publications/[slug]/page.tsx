@@ -132,9 +132,10 @@ export default async function PublicationDetailPage({
           {/* CONTENT BODY SECTION */}
           <div className="p-8 md:p-12 lg:px-16 max-w-5xl mx-auto">
             {/* Isi Konten */}
-            <div className="prose prose-lg prose-orange max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap font-serif">
-              {data.content}
-            </div>
+            <article
+              className="prose prose-lg prose-orange max-w-none text-gray-700 leading-relaxed font-serif"
+              dangerouslySetInnerHTML={{ __html: data.content ?? "" }}
+            />
 
             {/* PAPER DOWNLOAD SECTION */}
             {isPaper && data.fileUrl && (

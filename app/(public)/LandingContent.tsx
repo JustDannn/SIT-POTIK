@@ -509,7 +509,7 @@ export default function LandingContent({
         {/* Publication Grid */}
         {publications.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
-            {publications.map((item, idx) => {
+            {publications.slice(0, 6).map((item, idx) => {
               const catStyle = getCategoryStyle(item.category);
               const CatIcon = catStyle.icon;
 
@@ -642,7 +642,7 @@ export default function LandingContent({
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-            {events.map((event, idx) => {
+            {events.slice(0, 6).map((event, idx) => {
               const statusColor =
                 event.status === "ongoing"
                   ? "bg-green-100 text-green-700"

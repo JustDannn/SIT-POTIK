@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-type FilterTab = "All" | "Artikel" | "Infografis";
+type FilterTab = "All" | "Artikel" | "Infografis" | "Paper";
 
 interface PublicationItem {
   id: number;
@@ -96,7 +96,7 @@ export default function PublicationFeed({
 
           {/* Filter Tabs */}
           <div className="flex gap-1">
-            {["All", "Artikel", "Infografis"].map((tab) => (
+            {["All", "Artikel", "Infografis", "Paper"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab as FilterTab)}
@@ -107,7 +107,7 @@ export default function PublicationFeed({
                     : "text-gray-500 hover:bg-white/30 hover:text-gray-700",
                 )}
               >
-                {tab}
+                {tab === "Paper" ? "Paper" : tab}
               </button>
             ))}
           </div>
@@ -158,10 +158,12 @@ export default function PublicationFeed({
                         "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest backdrop-blur-xl border border-white/20 shadow-lg",
                         item.category === "Infografis"
                           ? "bg-purple-500/80 text-white"
-                          : "bg-orange-500/80 text-white",
+                          : item.category === "Paper"
+                            ? "bg-blue-500/80 text-white"
+                            : "bg-orange-500/80 text-white",
                       )}
                     >
-                      {item.category}
+                      {item.category === "Paper" ? "Paper" : item.category}
                     </span>
                   </div>
                 </div>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/db";
 import { publications, users } from "@/db/schema";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { Calendar, User, ArrowRight } from "lucide-react";
 
 // Fetch Public Articles
@@ -21,15 +21,7 @@ async function getPublicUpdates() {
     .from(publications)
     .leftJoin(users, eq(publications.authorId, users.id))
     .where(
-      and(
-        eq(publications.status, "published"),
-        // Hanya tampilkan kategori yang relevan buat news
-        inArray(publications.category, [
-          "Artikel",
-          "Press Release",
-          "Dokumentasi",
-        ]),
-      ),
+      and(eq(publications.status, "published"), eq(publications.divisionId, 4)),
     )
     .orderBy(desc(publications.publishedAt));
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import {
   Save,
@@ -16,6 +17,19 @@ import {
 import Link from "next/link";
 import { createPublication, updatePublication } from "../actions";
 import { cn } from "@/lib/utils";
+import TiptapEditor from "../_components/TiptapEditor";
+
+type PublicationInitialData = {
+  id: number;
+  title?: string | null;
+  slug?: string | null;
+  category?: string | null;
+  status?: string | null;
+  excerpt?: string | null;
+  content?: string | null;
+  thumbnailUrl?: string | null;
+  fileUrl?: string | null;
+};
 
 // --- KOMPONEN TOAST ---
 const Toast = ({
@@ -61,7 +75,7 @@ export default function PublicationFormView({
 }: {
   divisionId: number;
   userId: string;
-  initialData?: any;
+  initialData?: PublicationInitialData | null;
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -180,11 +194,14 @@ export default function PublicationFormView({
         router.push("/dashboard/publications");
         router.refresh();
       }, 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Terjadi kesalahan sistem.";
+
       // ERROR FEEDBACK
       setNotification({
         type: "error",
-        message: error.message || "Terjadi kesalahan sistem.",
+        message,
       });
     } finally {
       setLoading(false);
@@ -322,19 +339,17 @@ export default function PublicationFormView({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Isi Konten Utama
               </label>
-              <textarea
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 h-96 font-mono text-sm"
-                placeholder="Tulis artikel di sini (Support Markdown sederhana)..."
-                value={formData.content}
-                onChange={(e) =>
-                  setFormData({ ...formData, content: e.target.value })
+              <TiptapEditor
+                content={formData.content}
+                onChange={(html) =>
+                  setFormData((prev) => ({ ...prev, content: html }))
                 }
               />
               <p className="text-xs text-gray-400 mt-2 text-right">
-                Tip: Gunakan Markdown untuk formatting.
+                Tip: Konten disimpan dalam format HTML.
               </p>
             </div>
           </div>
@@ -356,10 +371,13 @@ export default function PublicationFormView({
                 onClick={() => document.getElementById("thumbInput")?.click()}
               >
                 {thumbnailPreview ? (
-                  <img
+                  <Image
                     src={thumbnailPreview}
                     alt="Preview"
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    unoptimized
+                    className="object-cover"
                   />
                 ) : (
                   <>

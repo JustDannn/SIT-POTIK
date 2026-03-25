@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -47,6 +47,16 @@ export default function KoordinatorProkerView({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "gantt">("card");
+
+  const uniqueData = useMemo(() => {
+    const seen = new Set<string>();
+    return data.filter((item) => {
+      const key = `${item.type ?? "proker"}-${item.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [data]);
 
   // Ambil nama divisi dari user profile
   const divisionName = user.division?.divisionName || "Divisi Saya";
@@ -114,7 +124,7 @@ export default function KoordinatorProkerView({
       {/* GANTT VIEW */}
       {viewMode === "gantt" && (
         <ProkerGanttChart
-          data={data.map((p) => ({
+          data={uniqueData.map((p) => ({
             id: p.id,
             title: p.title,
             divisionName: p.divisionName || divisionName,
@@ -130,9 +140,9 @@ export default function KoordinatorProkerView({
       {viewMode === "card" && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {data.map((proker) => (
+            {uniqueData.map((proker) => (
               <Link
-                key={proker.id}
+                key={`${proker.type ?? "proker"}-${proker.id}`}
                 href={`/dashboard/proker/${proker.id}`}
                 className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-indigo-300 hover:shadow-md transition-all relative overflow-hidden"
               >
@@ -222,7 +232,7 @@ export default function KoordinatorProkerView({
               </Link>
             ))}
 
-            {data.length === 0 && (
+            {uniqueData.length === 0 && (
               <div className="col-span-full py-20 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                 <Target className="mx-auto text-gray-300 mb-3" size={48} />
                 <p className="text-gray-500">
