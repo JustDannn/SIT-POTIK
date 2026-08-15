@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { publications, users } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { revalidatePath } from "next/cache";
 
 export async function getImpactStories(divisionId: number) {
@@ -55,10 +55,7 @@ export async function getImpactById(impactId: number) {
 
 // CREATE STANDALONE IMPACT STORY (tanpa event)
 export async function createStandaloneImpactStory(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { error: "Unauthorized" };
 
@@ -113,10 +110,7 @@ export async function updateStandaloneImpactStory(
   impactId: number,
   formData: FormData,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { error: "Unauthorized" };
 

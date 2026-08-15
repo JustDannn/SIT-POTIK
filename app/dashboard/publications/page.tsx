@@ -1,24 +1,18 @@
 import React from "react";
 import { getPublications } from "./actions";
 import PublicationsListView from "./_views/PublicationsListView";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export default async function PublicationsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect("/login");
 
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-    with: { division: true },
-  });
+  const userProfile = user;
   if (!userProfile?.divisionId) {
     return <div>Anda tidak memiliki akses ke modul ini.</div>;
   }

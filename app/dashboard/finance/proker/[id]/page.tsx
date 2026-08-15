@@ -1,13 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { getProkerTransactions } from "../actions";
-import { ArrowLeft, Plus, Download, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getCurrentUser } from "@/utils/session";
 
 const formatRupiah = (num: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -21,16 +18,10 @@ export default async function ProkerFinanceDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
-  const dbUser = await db.query.users.findFirst({
-    where: eq(users.authId, authUser.id),
-    with: { role: true },
-  });
+  const dbUser = user;
   const canEdit = dbUser?.role?.roleName === "Bendahara";
 
   const { id } = await params;

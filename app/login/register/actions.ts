@@ -1,14 +1,13 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
-import { db } from "@/db"; // Sesuaikan path Drizzle instance lu
-import { users, registrationTokens } from "@/db/schema"; // Import tabel token
+import { db } from "@/db";
+import { users, registrationTokens } from "@/db/schema";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+import { createSession } from "@/utils/session";
 
 export async function signUp(formData: FormData) {
-  const supabase = await createClient();
-
   const fullName = formData.get("fullName") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -36,40 +35,38 @@ export async function signUp(formData: FormData) {
     return redirect("/login/register?error=token_expired");
   }
 
-  // Register ke Supabase Auth
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName },
-    },
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, email),
   });
 
-  if (error || !data.user) {
-    console.error("Auth Error:", error);
+  if (existingUser) {
     return redirect("/login/register?error=signup_failed");
   }
 
-  // Masukin ke tabel public `users` dan tandain token terpakai
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   try {
-    await db.insert(users).values({
-      id: data.user.id,
-      name: fullName,
-      email: email,
-      status: "active",
-      roleId: tokenRecord.roleId, // Role otomatis dari token
-      divisionId: tokenRecord.divisionId, // Divisi otomatis dari token
-    });
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        name: fullName,
+        email: email,
+        password: hashedPassword,
+        status: "active",
+        roleId: tokenRecord.roleId,
+        divisionId: tokenRecord.divisionId,
+      })
+      .returning({ id: users.id });
 
     await db
       .update(registrationTokens)
       .set({ isUsed: true })
       .where(eq(registrationTokens.id, tokenRecord.id));
+
+    await createSession(newUser.id);
   } catch (dbError) {
     console.error("DB Insert Error:", dbError);
     return redirect("/login/register?error=db_error");
   }
-
-  // Sukses!
   redirect("/dashboard?welcome=true");
 }

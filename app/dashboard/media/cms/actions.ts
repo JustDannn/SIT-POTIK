@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { siteConfig } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 
 import {
   LANDING_DEFAULTS,
@@ -117,6 +117,11 @@ function findSectionDefaults(section: string): Record<string, string> {
 export async function getCMSSection(
   section: string,
 ): Promise<Record<string, string>> {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
   const rows = await db.query.siteConfig.findMany({
     where: eq(siteConfig.section, section),
   });
@@ -139,10 +144,7 @@ export async function saveCMSField(
   value: string,
   dbId: number | null,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
   if (dbId) {
@@ -179,10 +181,7 @@ export async function saveCMSFields(
     dbId: number | null;
   }[],
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
   for (const field of fields) {

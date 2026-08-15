@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -35,17 +35,10 @@ export default async function CMSSectionPage({
 }) {
   const { section } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
-  if (!authUser) redirect("/login");
-
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
-    with: { role: true, division: true },
-  });
+  const userProfile = user;
 
   // Check if user has permission
   const isMedia =

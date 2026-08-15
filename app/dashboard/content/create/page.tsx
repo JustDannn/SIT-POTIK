@@ -1,12 +1,9 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { redirect } from "next/navigation";
 import PublicationForm from "../_components/PublicationForm"; // Import komponen baru
 
 export default async function CreateContentPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect("/login");
 

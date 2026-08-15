@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import Sidebar from "@/components/layout/sidebar";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -11,18 +11,14 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-    error,
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
-  if (error || !authUser) {
+  if (!user) {
     redirect("/login");
   }
 
   const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
+    where: eq(users.id, user.id),
     with: {
       role: true,
       division: true,

@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -33,20 +33,16 @@ import {
 import { getDivisionMembers } from "./events/actions";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  // Auth Check
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  if (!authUser) {
+  if (!user) {
     redirect("/login");
-    return; // TypeScript: tells the compiler this code path ends here
+    return;
   }
 
   // Ambil Role User & DIVISI
   const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
+    where: eq(users.id, user.id),
     with: {
       role: true,
       division: true,

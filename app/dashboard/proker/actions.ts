@@ -11,7 +11,7 @@ import {
   programParticipants,
 } from "@/db/schema";
 import { desc, eq, and } from "drizzle-orm";
-import { createClient } from "@/utils/supabase/server"; // Tambahan buat Auth
+import { getCurrentUser } from "@/utils/session"; // Tambahan buat Auth
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -32,10 +32,7 @@ function mapProgramStatus(status: string | null): string {
 }
 
 export async function getAllProkers() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   let whereCondition = undefined;
   let programWhereCondition = undefined;

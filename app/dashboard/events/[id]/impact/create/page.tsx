@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { redirect, notFound } from "next/navigation";
 import { getEventById } from "../../../actions";
 import ImpactCreateForm from "./ImpactCreateForm";
@@ -8,11 +8,7 @@ export default async function ImpactCreatePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   const { id } = await params;

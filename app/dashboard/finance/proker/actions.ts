@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { prokers, financeRecords, divisions } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 
 // GET SUMMARY PROKER
 export async function getProkerFinanceSummary() {
@@ -59,10 +59,7 @@ export async function getProkerTransactions(prokerId: number) {
 
 // ADD TRANSACTION (Masuk/Keluar)
 export async function addTransaction(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
   const prokerIdStr = formData.get("prokerId") as string;

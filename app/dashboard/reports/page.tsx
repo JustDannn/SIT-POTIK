@@ -1,28 +1,19 @@
 import React from "react";
 import { getReportData } from "./actions";
 import DivisionReportView from "./_views/DivisionReportView";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users, roles } from "@/db/schema"; // Pastikan import roles
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export default async function ReportsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect("/login");
 
   // Ambil user profile + Role Name
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-    with: {
-      division: true,
-      role: true, // Kita butuh nama role-nya
-    },
-  });
+  const userProfile = user;
 
   if (!userProfile) return <div>User data not found</div>;
 

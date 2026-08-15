@@ -1,25 +1,19 @@
 import React from "react";
 import { getDivisionTasks, getFormOptions } from "./actions";
 import TaskKanbanView from "./_views/TaskKanbanView";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 export default async function TasksPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect("/login");
 
   // Ambil user info buat tau divisi mana
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-    with: { division: true },
-  });
+  const userProfile = user;
 
   if (!userProfile?.divisionId) {
     return (

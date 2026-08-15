@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { minutes, users, prokers } from "@/db/schema";
 import { eq, desc, and, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 
 // 1. GET LIST NOTULENSI
 export async function getMinutes(query: string = "") {
@@ -42,10 +42,7 @@ export async function getProkerOptions() {
 
 // 4. CREATE / UPDATE ACTION
 export async function saveMinute(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
   const id = formData.get("id") as string;

@@ -49,15 +49,7 @@ type CampaignPlatform =
   | "twitter"
   | "youtube";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
-
-async function getCurrentUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
-}
+import { getCurrentUser } from "@/utils/session";
 
 export async function getMediaDashboardStats() {
   const now = new Date();

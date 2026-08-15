@@ -11,7 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -25,16 +25,10 @@ const formatRupiah = (num: number) =>
   }).format(num);
 
 export default async function GeneralFinancePage() {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
-  const dbUser = await db.query.users.findFirst({
-    where: eq(users.authId, authUser.id),
-    with: { role: true },
-  });
+  const dbUser = user;
   const roleName = dbUser?.role?.roleName ?? "";
   const canEdit = roleName === "Bendahara";
 

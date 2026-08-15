@@ -2,21 +2,30 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+import { createSession } from "@/utils/session";
 
 export async function login(formData: FormData) {
-  const supabase = await createClient();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email),
   });
 
-  if (error) {
-    console.error("Login error:", error);
-    redirect("/login?error=invalid_credentials");
+  if (!user || !user.password) {
+    return redirect("/login?error=invalid_credentials");
   }
+  const passwordsMatch = await bcrypt.compare(password, user.password);
+
+  if (!passwordsMatch) {
+    return redirect("/login?error=invalid_credentials");
+  }
+
+  await createSession(user.id);
   revalidatePath("/", "layout");
   redirect("/dashboard");
 }

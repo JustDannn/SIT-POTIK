@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -8,15 +8,12 @@ import KetuaApprovalView from "./_views/KetuaApprovalView";
 import KoordinatorApprovalView from "./_views/KoordinatorApprovalView";
 
 export default async function ApprovalPage() {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
+  if (!user) redirect("/login");
 
   const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
+    where: eq(users.id, user.id),
     with: { role: true },
   });
 
@@ -31,7 +28,7 @@ export default async function ApprovalPage() {
 
   // Koordinator & Anggota: See their own submission statuses
   if (roleName === "Koordinator" || roleName === "Anggota") {
-    const mySubmissions = await getMySubmissions(authUser.id);
+    const mySubmissions = await getMySubmissions(user.id);
     return (
       <KoordinatorApprovalView
         data={mySubmissions}

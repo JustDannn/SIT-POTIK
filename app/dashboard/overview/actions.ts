@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { users, roles, registrationTokens } from "@/db/schema"; // Import disatukan
 import { eq, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server"; // Pindah ke atas
+import { getCurrentUser } from "@/utils/session"; // Pindah ke atas
 import crypto from "crypto"; // Pindah ke atas
 
 export async function getOrganizationData() {
@@ -91,11 +91,7 @@ export async function getReferences() {
 }
 
 export async function generateTokenAction(formData?: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (authError || !user) {
     return { error: "Unauthorized" };

@@ -1,12 +1,9 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { redirect } from "next/navigation";
 import CreateEventForm from "../_components/CreateEventForm";
 
 export default async function CreateEventPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) redirect("/login");
 

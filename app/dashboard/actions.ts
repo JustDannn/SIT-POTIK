@@ -33,7 +33,7 @@ import {
   or,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 
 export async function getDashboardStats() {
   const [
@@ -444,10 +444,7 @@ export async function getLayananDataStats() {
 
 // INPUT TAMU BARU (ABSEN)
 export async function addGuestEntry(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
   const name = formData.get("name") as string;
@@ -742,18 +739,10 @@ export async function getEducationDashboardData(divisionId: number) {
 
 // Create Event Baru
 export async function createEvent(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: "Unauthorized" };
 
-  // Ambil Division ID User
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-  });
-
-  if (!userProfile?.divisionId) return { error: "No Division" };
+  if (!user.divisionId) return { error: "No Division" };
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -767,7 +756,7 @@ export async function createEvent(formData: FormData) {
     location,
     startDate,
     endDate,
-    divisionId: userProfile.divisionId,
+    divisionId: user.divisionId,
     status: "planned",
   });
 

@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { redirect, notFound } from "next/navigation";
 import PublicationForm from "../../_components/PublicationForm"; // Import form yang sama
 import { getPublicationById } from "../../actions";
@@ -14,10 +14,7 @@ export default async function EditContentPage({ params }: PageProps) {
   if (isNaN(contentId)) notFound();
 
   // Cek Auth
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   // Ambil Data Konten Existing

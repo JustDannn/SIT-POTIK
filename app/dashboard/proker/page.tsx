@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -15,18 +15,12 @@ export default async function ProkerPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const params = await searchParams;
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
   // Auth Check
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
+  if (!user) redirect("/login");
 
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
-    with: { role: true, division: true },
-  });
+  const userProfile = user;
 
   if (!userProfile?.role) return <div>Unauthorized</div>;
   const roleName = userProfile.role.roleName;

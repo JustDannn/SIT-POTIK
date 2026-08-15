@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import {
@@ -16,21 +16,10 @@ interface Props {
 
 export default async function DesignRequestDetailPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  // Get user profile with division and role
-  const profile = await db.query.users.findFirst({
-    where: eq(users.id, user.id),
-    with: {
-      role: true,
-      division: true,
-    },
-  });
+  const profile = user;
 
   if (!profile) redirect("/login");
 

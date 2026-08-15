@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { financeRecords, users } from "@/db/schema";
 import { eq, desc, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 
 export async function getGeneralFinance() {
   const transactions = await db
@@ -41,10 +41,7 @@ export async function getGeneralFinance() {
 
 // GENERAL TRANSACTION
 export async function addGeneralTransaction(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
   const amount = formData.get("amount") as string;

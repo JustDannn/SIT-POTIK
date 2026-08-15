@@ -9,15 +9,12 @@ import {
   designRequests,
 } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function getContentList() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { role: null, data: [], userId: null };
 
@@ -164,10 +161,7 @@ export async function getPublicationById(id: number) {
 
 // UPDATE CONTENT
 export async function updateContent(id: number, formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: "Unauthorized" };
 
   const title = formData.get("title") as string;

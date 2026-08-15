@@ -11,7 +11,7 @@ import {
   tasks,
 } from "@/db/schema";
 import { eq, and, desc, ilike } from "drizzle-orm";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { revalidatePath } from "next/cache";
 
 // --- HELPER: FORMAT TANGGAL INDONESIA ---

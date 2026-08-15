@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -9,11 +9,8 @@ import KetuaContentView from "./_views/KetuaContentView";
 import KoordinatorContentView from "./_views/KoordinatorContentView";
 
 export default async function ContentPage() {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  if (!authUser) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
   const result = await getContentList();
   const { role, data } = result;

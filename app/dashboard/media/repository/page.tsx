@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -14,17 +14,10 @@ import AssetGallery from "../_components/AssetGallery";
 import { ArrowLeft, Image as ImageIcon } from "lucide-react";
 
 export default async function MediaRepositoryPage() {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
-  if (!authUser) redirect("/login");
-
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
-    with: { role: true, division: true },
-  });
+  const userProfile = user;
 
   // Check if user has permission (Media, or viewing access for others)
   const isMedia =

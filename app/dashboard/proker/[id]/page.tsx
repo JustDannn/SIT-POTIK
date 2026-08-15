@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import {
   prokers,
@@ -28,17 +28,10 @@ export default async function ProkerDetailPage({ params }: PageProps) {
   }
 
   // 2. Auth Check & Get User Profile
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
-  if (!authUser) redirect("/login");
-
-  const userProfile = await db.query.users.findFirst({
-    where: eq(users.id, authUser.id),
-    with: { role: true, division: true },
-  });
+  const userProfile = user;
 
   try {
     // 3. Fetch Proker Core Data
