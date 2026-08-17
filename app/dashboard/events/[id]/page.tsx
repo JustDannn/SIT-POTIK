@@ -23,5 +23,5 @@ export default async function EventDetailPage({
   const participant = event.participants.find((p) => p.userId === user.id);
   const userRole = participant?.role ?? "viewer";
 
-  return <EventDetailClient event={event} userRole={userRole} />;
+  return <EventDetailClient event={event as any} userRole={userRole} currentUser={user as any} />;
 }

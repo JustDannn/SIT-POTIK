@@ -1,52 +1,45 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { decrypt } from "@/utils/session"; // Import fungsi dekripsi JWT kita
 
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  const path = request.nextUrl.pathname;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
-        },
-      },
-    },
-  );
+  // Cek apakah user mau akses area dashboard
+  const isDashboardRoute = path.startsWith("/dashboard");
+  const isLoginRoute = path.startsWith("/login");
 
-  // IMPORTANT: Do NOT run any logic between createServerClient and getUser().
-  // A simple mistake could lead to very hard-to-debug auth issues.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Ambil cookie session
+  const sessionCookie = request.cookies.get("session")?.value;
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    request.nextUrl.pathname.startsWith("/dashboard")
-  ) {
+  let isAuthenticated = false;
+
+  if (sessionCookie) {
+    try {
+      const session = await decrypt(sessionCookie);
+      if (session?.userId) {
+        isAuthenticated = true;
+      }
+    } catch (e) {
+      // Kalau token invalid / expired
+      isAuthenticated = false;
+    }
+  }
+
+  // 1. Kalau belum login tapi maksa masuk /dashboard -> lempar ke /login
+  if (isDashboardRoute && !isAuthenticated) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  // 2. Kalau sudah login tapi malah buka halaman /login -> lempar ke /dashboard
+  if (isLoginRoute && isAuthenticated) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
@@ -58,6 +51,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder assets
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|uploads)$).*)",
   ],
 };

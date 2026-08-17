@@ -27,9 +27,9 @@ export default async function ContentPage() {
 
   // View KOORDINATOR (Artikel & Publikasi Web)
   if (role === "Koordinator") {
-    return <KoordinatorContentView data={data} />;
+    return <KoordinatorContentView data={data as any} />;
   }
 
   // ALL OTHER ROLES — Can request content from Media & Branding
-  return <KoordinatorContentView data={data} />;
+  return <KoordinatorContentView data={data as any} />;
 }

@@ -7,8 +7,7 @@ import { cn } from "@/lib/utils";
 import { getMenuForUser } from "@/config/menu-generator";
 import { LogOut, Search, ChevronLeft, ChevronRight, Sun } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { logoutAction } from "@/actions/auth";
 // Import DiceBear
 import { createAvatar } from "@dicebear/core";
 import { dylan } from "@dicebear/collection";
@@ -23,12 +22,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ user }: { user: any }) {
-  const router = useRouter();
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.replace("/login");
-    router.refresh();
+    await logoutAction();
   };
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -116,6 +111,7 @@ export default function Sidebar({ user }: { user: any }) {
       <nav className="flex-1 space-y-1 px-4 overflow-y-auto scrollbar-hide">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
+          const Icon = item.icon as React.ElementType;
           return (
             <Link
               key={item.href}
@@ -128,7 +124,7 @@ export default function Sidebar({ user }: { user: any }) {
                 isCollapsed && "justify-center px-2",
               )}
             >
-              <item.icon size={20} />
+              <Icon size={20} />
               {!isCollapsed && <span>{item.title}</span>}
             </Link>
           );

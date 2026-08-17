@@ -35,7 +35,7 @@ export default async function EditContentPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="container mx-auto px-4 pb-20">
-        <PublicationForm user={user} initialData={contentData} />
+        <PublicationForm user={user} initialData={contentData as any} />
       </div>
     </div>
   );

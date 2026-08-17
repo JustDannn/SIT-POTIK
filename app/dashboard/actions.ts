@@ -1,5 +1,8 @@
 "use server";
 
+import { writeFile } from "fs/promises";
+import path from "path";
+import fs from "fs";
 import { db } from "@/db";
 import {
   prokers,
@@ -862,3 +865,34 @@ export async function getMediaDashboardData() {
     })),
   };
 }
+
+export async function uploadFileAction(formData: FormData) {
+  const file = formData.get("file") as File | null;
+  const bucket = formData.get("bucket") as string | null;
+
+  if (!file || !bucket) {
+    return { error: "File and bucket are required." };
+  }
+
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.]/g, "");
+    const fileName = `${Date.now()}-${sanitizedFilename}`;
+    const uploadDir = path.join(process.cwd(), "public", "uploads", bucket);
+    
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filepath = path.join(uploadDir, fileName);
+    await writeFile(filepath, buffer);
+
+    return { url: `/uploads/${bucket}/${fileName}` };
+  } catch (error) {
+    console.error("Upload error:", error);
+    return { error: "Failed to upload file." };
+  }
+}
+

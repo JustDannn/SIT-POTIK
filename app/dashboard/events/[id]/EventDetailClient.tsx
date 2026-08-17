@@ -12,7 +12,6 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/context/AuthContext";
 import EventOverview from "./_tabs/EventOverview";
 import EventTeam from "./_tabs/EventTeam";
 import EventLogs from "./_tabs/EventLogs";
@@ -81,20 +80,15 @@ interface EventData {
 export default function EventDetailClient({
   event,
   userRole,
+  currentUser,
 }: {
   event: EventData;
   userRole: string;
+  currentUser: any;
 }) {
-  const { profile, loading } = useAuth();
-  console.log("PROFILE DEBUG:", profile);
-  console.log("ROLE:", profile?.role_id);
-  console.log("DIVISION:", profile?.division_id);
-
   const [activeTab, setActiveTab] = useState("overview");
 
-  if (loading) return null;
-
-  const isKetua = profile?.role_id === 11;
+  const isKetua = currentUser?.roleId === 11;
   const backHref = isKetua ? "/dashboard/proker" : "/dashboard/events";
   const backLabel = isKetua ? "Kembali ke List" : "Kembali ke Events";
 

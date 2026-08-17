@@ -93,7 +93,7 @@ export async function getReferences() {
 export async function generateTokenAction(formData?: FormData) {
   const user = await getCurrentUser();
 
-  if (authError || !user) {
+  if (!user) {
     return { error: "Unauthorized" };
   }
 

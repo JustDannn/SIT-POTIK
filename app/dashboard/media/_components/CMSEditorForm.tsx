@@ -2,8 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { updateSiteConfig } from "../actions";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import RichTextEditor from "@/components/RichTextEditor";
 import Image from "next/image";
 import {
@@ -52,7 +52,6 @@ export default function CMSEditorForm({
   onSave,
 }: CMSEditorFormProps) {
   const router = useRouter();
-  const supabase = createClient();
   const [isPending, startTransition] = useTransition();
   const [editedValues, setEditedValues] = useState<Record<number, string>>({});
   const [previews, setPreviews] = useState<Record<number, string>>({});
@@ -81,16 +80,17 @@ export default function CMSEditorForm({
       // Show preview immediately
       setPreviews((prev) => ({ ...prev, [id]: URL.createObjectURL(file) }));
 
-      // Upload to Supabase
-      const fileName = `cms-${section}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-      const { error: uploadError } = await supabase.storage
-        .from("cms")
-        .upload(fileName, file);
+      // Upload to local filesystem via Server Action
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "cms");
 
-      if (uploadError) throw uploadError;
+      const result = await uploadFileAction(formData);
 
-      const { data } = supabase.storage.from("cms").getPublicUrl(fileName);
-      handleValueChange(id, data.publicUrl);
+      if (result.error) throw new Error(result.error);
+      if (result.url) {
+        handleValueChange(id, result.url);
+      }
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Upload gagal. Silakan coba lagi.");

@@ -4,8 +4,8 @@ import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { createClient } from "@/utils/supabase/client";
 import { createCampaign } from "../../actions";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import {
   ArrowLeft,
   Save,
@@ -78,7 +78,6 @@ const PLATFORMS: {
 
 export default function CreateCampaignPage() {
   const router = useRouter();
-  const supabase = createClient();
   const [isPending, startTransition] = useTransition();
 
   const [formData, setFormData] = useState<{
@@ -123,17 +122,16 @@ export default function CreateCampaignPage() {
 
       // Upload asset if exists
       if (assetFile) {
-        const fileName = `campaign-${Date.now()}-${assetFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-        const { error: uploadError } = await supabase.storage
-          .from("campaigns")
-          .upload(fileName, assetFile);
+        const formData = new FormData();
+        formData.append("file", assetFile);
+        formData.append("bucket", "campaigns");
 
-        if (uploadError) throw uploadError;
+        const result = await uploadFileAction(formData);
 
-        const { data } = supabase.storage
-          .from("campaigns")
-          .getPublicUrl(fileName);
-        assetUrl = data.publicUrl;
+        if (result.error) throw new Error(result.error);
+        if (result.url) {
+          assetUrl = result.url;
+        }
       }
 
       // Combine date and time

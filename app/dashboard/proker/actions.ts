@@ -199,10 +199,7 @@ export async function getProkerDetail(prokerId: number) {
 }
 
 export async function createProker(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return;
 
   const userProfile = await db.query.users.findFirst({
@@ -225,10 +222,7 @@ export async function createProker(formData: FormData) {
   redirect("/dashboard/proker");
 }
 export async function addTask(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return;
 
   const prokerId = Number(formData.get("prokerId"));
@@ -261,10 +255,7 @@ export async function toggleTaskStatus(
   prokerId: number,
   taskTitle: string,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return;
 
   const newStatus: "todo" | "done" = currentStatus === "done" ? "todo" : "done";
@@ -284,10 +275,7 @@ export async function toggleTaskStatus(
 
 // 3. ADD MANUAL LOG (Buat update progres non-task, misal: "Rapat lancar")
 export async function addManualLog(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return;
 
   const prokerId = Number(formData.get("prokerId"));
@@ -307,10 +295,7 @@ export async function updateProkerStatus(
   prokerId: number,
   newStatus: "created" | "active" | "completed" | "archived",
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { success: false, error: "Unauthorized" };
 

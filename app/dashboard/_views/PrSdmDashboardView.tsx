@@ -22,8 +22,8 @@ interface PrSdmAlert {
 
 interface PrSdmActivity {
   id: string | number;
-  userName: string;
-  createdAt: string | Date;
+  userName: string | null;
+  createdAt: string | Date | null;
   notes: string;
   prokerTitle?: string | null;
 }
@@ -193,13 +193,15 @@ export default function PrSdmDashboardView({
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-bold text-sm text-gray-900">
-                      {act.userName}
+                      {act.userName || "User (Dihapus)"}
                     </span>
                     <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                      {new Date(act.createdAt).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {act.createdAt
+                        ? new Date(act.createdAt).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Waktu tidak tersedia"}
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 mb-1.5 leading-relaxed">

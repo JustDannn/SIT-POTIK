@@ -16,8 +16,8 @@ import {
   EyeOff,
   Send,
 } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 import { updateImpactStory } from "../../../../actions";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import RichTextEditor from "@/components/RichTextEditor";
 import { cn } from "@/lib/utils";
 
@@ -64,7 +64,6 @@ export default function ImpactEditForm({
   impact: Impact;
 }) {
   const router = useRouter();
-  const supabase = createClient();
 
   const [title, setTitle] = useState(impact.title || "");
   const [content, setContent] = useState(impact.content || "");
@@ -118,17 +117,16 @@ export default function ImpactEditForm({
       // 1. Upload new thumbnail if changed
       if (thumbnailChanged) {
         if (thumbnailFile) {
-          const fileName = `impact-thumb-${Date.now()}-${thumbnailFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-          const { error: uploadErr } = await supabase.storage
-            .from("publications")
-            .upload(fileName, thumbnailFile);
-          if (uploadErr)
-            throw new Error("Gagal upload thumbnail: " + uploadErr.message);
-
-          const res = supabase.storage
-            .from("publications")
-            .getPublicUrl(fileName);
-          thumbnailUrl = res.data.publicUrl;
+          const formData = new FormData();
+          formData.append("file", thumbnailFile);
+          formData.append("bucket", "publications");
+          
+          const result = await uploadFileAction(formData);
+          if (result.error) throw new Error("Gagal upload thumbnail: " + result.error);
+          
+          if (result.url) {
+            thumbnailUrl = result.url;
+          }
         } else {
           thumbnailUrl = null;
         }
@@ -137,17 +135,16 @@ export default function ImpactEditForm({
       // 2. Upload new attachment if changed
       if (attachmentChanged) {
         if (attachmentFile) {
-          const fileName = `impact-file-${Date.now()}-${attachmentFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-          const { error: uploadErr } = await supabase.storage
-            .from("publications")
-            .upload(fileName, attachmentFile);
-          if (uploadErr)
-            throw new Error("Gagal upload file: " + uploadErr.message);
-
-          const res = supabase.storage
-            .from("publications")
-            .getPublicUrl(fileName);
-          fileUrl = res.data.publicUrl;
+          const formData = new FormData();
+          formData.append("file", attachmentFile);
+          formData.append("bucket", "publications");
+          
+          const result = await uploadFileAction(formData);
+          if (result.error) throw new Error("Gagal upload file: " + result.error);
+          
+          if (result.url) {
+            fileUrl = result.url;
+          }
         } else {
           fileUrl = null;
         }

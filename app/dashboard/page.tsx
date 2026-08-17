@@ -78,33 +78,32 @@ export default async function DashboardPage() {
   }
 
   // LOGIC KOORDINATOR
-  if (roleName === "Koordinator") {
-    // KOORDINATOR RISET & DATA
+  if (roleName === "Koordinator" || roleName === "Anggota") {
+    // KOORDINATOR & ANGGOTA RISET & DATA
     if (divisionName.includes("riset") || divisionName.includes("infografis")) {
       if (!userProfile.divisionId)
         return <div>Error: Divisi belum di-assign.</div>;
 
-      // Ambil statistik khusus Riset
       const risetData = await getRisetStats(userProfile.divisionId);
-
       return <KoordinatorRisetView user={userProfile} data={risetData} />;
     }
+
     if (divisionName.includes("layanan") || divisionName.includes("data")) {
       if (!userProfile.divisionId)
         return <div>Error: Divisi belum di-assign.</div>;
 
-      // Ambil statistik khusus Layanan data
       const layananData = await getLayananDataStats();
       return <LayananDataDashboard user={userProfile} data={layananData} />;
     }
+
     if (divisionName.includes("public") || divisionName.includes("relation")) {
       if (!userProfile.divisionId)
         return <div>Error: Divisi belum di-assign.</div>;
 
-      // Ambil statistik khusus Public Relation & SDM
       const PrSdm = await getPrSdmDashboardData(userProfile.divisionId);
       return <PrSdmDashboardView user={userProfile} data={PrSdm} />;
     }
+
     if (
       divisionName.includes("edukasi") ||
       divisionName.includes("pelatihan")
@@ -112,7 +111,6 @@ export default async function DashboardPage() {
       if (!userProfile.divisionId)
         return <div>Error: Divisi belum di-assign.</div>;
 
-      // Ambil statistik khusus Edukasi dan Pelatihan
       const [educationData, divisionMembers] = await Promise.all([
         getEducationDashboardData(userProfile.divisionId),
         getDivisionMembers(userProfile.divisionId),
@@ -125,6 +123,7 @@ export default async function DashboardPage() {
         />
       );
     }
+
     if (divisionName.includes("media") || divisionName.includes("branding")) {
       if (!userProfile.divisionId)
         return <div>Error: Divisi belum di-assign.</div>;
@@ -145,11 +144,12 @@ export default async function DashboardPage() {
         />
       );
     }
-    //KOORDINATOR LAIN (Coming Soon)
+
+    // Divisi lain / default
     return (
       <div className="p-10 text-center border border-dashed rounded-xl m-8">
         <h2 className="text-xl font-bold text-gray-700">
-          Dashboard Koordinator {userProfile.division?.divisionName}
+          Dashboard {userProfile.division?.divisionName}
         </h2>
         <p className="text-gray-500 mt-2">
           Fitur spesifik divisi ini sedang dalam pengembangan 🚧

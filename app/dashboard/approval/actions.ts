@@ -66,7 +66,7 @@ export async function getMySubmissions(userId: string) {
     title: r.title || "Laporan",
     type: r.type || "Laporan",
     status:
-      r.status === "pending" || r.status === "submitted"
+      r.status === "submitted"
         ? "submitted"
         : (r.status ?? "draft"),
     prokerName: r.prokerTitle || "Umum",
@@ -79,7 +79,7 @@ export async function getMySubmissions(userId: string) {
     title: `LPJ: ${l.prokerTitle || "Umum"}`,
     type: "LPJ",
     status:
-      l.status === "pending" || l.status === "submitted"
+      l.status === "submitted"
         ? "submitted"
         : (l.status ?? "draft"),
     prokerName: l.prokerTitle || "Umum",

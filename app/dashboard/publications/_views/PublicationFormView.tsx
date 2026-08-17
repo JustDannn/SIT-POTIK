@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { createClient } from "@/utils/supabase/client";
 import {
   Save,
   ArrowLeft,
@@ -15,7 +14,12 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { createPublication, updatePublication } from "../actions";
+import {
+  createPublication,
+  updatePublication,
+  uploadThumbnail,
+  uploadDocument,
+} from "../actions";
 import { cn } from "@/lib/utils";
 import TiptapEditor from "../_components/TiptapEditor";
 
@@ -78,7 +82,6 @@ export default function PublicationFormView({
   initialData?: PublicationInitialData | null;
 }) {
   const router = useRouter();
-  const supabase = createClient();
   const isEditing = !!initialData;
 
   // State Form
@@ -133,32 +136,24 @@ export default function PublicationFormView({
       let thumbnailUrl = initialData?.thumbnailUrl || null;
       let fileUrl = initialData?.fileUrl || null;
 
-      // 1. Upload Thumbnail
+      // 1. Upload Thumbnail menggunakan Server Action
       if (thumbnailFile) {
-        const fileName = `thumb-${Date.now()}-${thumbnailFile.name}`;
-        const { error } = await supabase.storage
-          .from("publications")
-          .upload(fileName, thumbnailFile);
+        const formData = new FormData();
+        formData.append("file", thumbnailFile);
+        const uploadRes = await uploadThumbnail(formData);
 
-        if (error) throw error;
-        const res = supabase.storage
-          .from("publications")
-          .getPublicUrl(fileName);
-        thumbnailUrl = res.data.publicUrl;
+        if (!uploadRes.success) throw new Error(uploadRes.error);
+        thumbnailUrl = uploadRes.url || null;
       }
 
-      // 2. Upload Dokumen PDF
+      // 2. Upload Dokumen PDF menggunakan Server Action
       if (docFile && formData.category === "Paper") {
-        const fileName = `doc-${Date.now()}-${docFile.name}`;
-        const { error } = await supabase.storage
-          .from("publications")
-          .upload(fileName, docFile);
+        const docFormData = new FormData();
+        docFormData.append("file", docFile);
+        const uploadRes = await uploadDocument(docFormData);
 
-        if (error) throw error;
-        const res = supabase.storage
-          .from("publications")
-          .getPublicUrl(fileName);
-        fileUrl = res.data.publicUrl;
+        if (!uploadRes.success) throw new Error(uploadRes.error);
+        fileUrl = uploadRes.url || null;
       }
 
       // 3. Simpan ke Database

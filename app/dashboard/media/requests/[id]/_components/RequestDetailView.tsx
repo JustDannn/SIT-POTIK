@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import {
   updateDesignRequestStatus,
   assignDesignRequest,
@@ -121,7 +121,6 @@ export default function RequestDetailView({
   currentUser,
 }: Props) {
   const router = useRouter();
-  const supabase = createClient();
   const [isPending, startTransition] = useTransition();
   const [newMessage, setNewMessage] = useState("");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
@@ -157,16 +156,14 @@ export default function RequestDetailView({
       let attachmentUrl: string | undefined;
 
       if (attachmentFile) {
-        const fileName = `request-${request.id}-${Date.now()}-${attachmentFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-        const { error } = await supabase.storage
-          .from("request-attachments")
-          .upload(fileName, attachmentFile);
+        const formData = new FormData();
+        formData.append("file", attachmentFile);
+        formData.append("bucket", "request-attachments");
 
-        if (!error) {
-          const { data } = supabase.storage
-            .from("request-attachments")
-            .getPublicUrl(fileName);
-          attachmentUrl = data.publicUrl;
+        const result = await uploadFileAction(formData);
+        
+        if (!result.error && result.url) {
+          attachmentUrl = result.url;
         }
       }
 

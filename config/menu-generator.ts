@@ -5,7 +5,6 @@ import {
   Wallet,
   CheckCircle,
   Archive,
-  History,
   BookOpen,
   Zap,
   Calendar,
@@ -27,6 +26,8 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
   const baseMenu: MenuItem[] = [
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   ];
+
+  // KETUA
   if (role === "Ketua") {
     return [
       ...baseMenu,
@@ -34,7 +35,9 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
       { title: "Ringkasan Org", href: "/dashboard/overview", icon: Building2 },
     ];
   }
-  if (role === "Koordinator") {
+
+  // KOORDINATOR & ANGGOTA DIVISI
+  if (role === "Koordinator" || role === "Anggota") {
     let managementMenu: MenuItem[] = [
       { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 },
       { title: "Task Management", href: "/dashboard/tasks", icon: CheckCircle },
@@ -42,12 +45,14 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
 
     let divisionMenu: MenuItem[] = [];
     const div = divisionName?.toLowerCase() || "";
+
     if (div.includes("layanan")) {
       managementMenu = managementMenu.filter(
         (item) => item.title !== "Program Kerja",
       );
     }
-    // Divisi Riset & Data
+
+    // Divisi Riset & Infografis
     if (div.includes("riset") || div.includes("infografis")) {
       divisionMenu = [
         {
@@ -80,7 +85,7 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
         },
       ];
     }
-    // Divisi pr & sdm
+    // Divisi Public Relation & Hubungan Manusia
     else if (
       div.includes("public") ||
       div.includes("relation") ||
@@ -95,9 +100,13 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
           icon: PenTool,
         },
       ];
-    } else if (div.includes("layanan") || div.includes("data")) {
+    }
+    // Divisi Layanan Data
+    else if (div.includes("layanan") || div.includes("data")) {
       divisionMenu = [];
-    } else if (div.includes("edukasi") || div.includes("pelatihan")) {
+    }
+    // Divisi Edukasi & Pelatihan
+    else if (div.includes("edukasi") || div.includes("pelatihan")) {
       return [
         ...baseMenu,
         { title: "Program & Event", href: "/dashboard/events", icon: Calendar },
@@ -105,8 +114,6 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
       ];
     }
 
-    // Gabungkan semuanya
-    // Urutan: Dashboard -> Menu Spesifik Divisi -> Menu Manajerial Umum
     return [...baseMenu, ...divisionMenu, ...managementMenu];
   }
 
@@ -140,13 +147,10 @@ export const getMenuForUser = (role?: string, divisionName?: string) => {
     ];
   }
 
-  // ANGGOTA (DEFAULT)
+  // DEFAULT
   return [
     ...baseMenu,
-    { title: "Proker Saya", href: "/dashboard/proker", icon: BarChart3 },
+    { title: "Program Kerja", href: "/dashboard/proker", icon: BarChart3 },
     { title: "Task Saya", href: "/dashboard/tasks", icon: CheckCircle },
-    { title: "Log Aktivitas", href: "/dashboard/logs", icon: History },
-    { title: "Notulensi", href: "/dashboard/minutes", icon: ScrollText },
-    { title: "Arsip Dokumen", href: "/dashboard/archives", icon: Archive },
   ];
 };

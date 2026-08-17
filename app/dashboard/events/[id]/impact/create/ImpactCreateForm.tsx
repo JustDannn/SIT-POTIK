@@ -16,8 +16,8 @@ import {
   EyeOff,
   Send,
 } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
 import { createImpactStory } from "../../../actions";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import RichTextEditor from "@/components/RichTextEditor";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,6 @@ export default function ImpactCreateForm({
   eventTitle: string;
 }) {
   const router = useRouter();
-  const supabase = createClient();
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -109,34 +108,32 @@ export default function ImpactCreateForm({
       let thumbnailUrl: string | null = null;
       let fileUrl: string | null = null;
 
-      // 1. Upload thumbnail to Supabase Storage
+      // 1. Upload thumbnail to local filesystem
       if (thumbnailFile) {
-        const fileName = `impact-thumb-${Date.now()}-${thumbnailFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-        const { error: uploadErr } = await supabase.storage
-          .from("publications")
-          .upload(fileName, thumbnailFile);
-        if (uploadErr)
-          throw new Error("Gagal upload thumbnail: " + uploadErr.message);
-
-        const res = supabase.storage
-          .from("publications")
-          .getPublicUrl(fileName);
-        thumbnailUrl = res.data.publicUrl;
+        const formData = new FormData();
+        formData.append("file", thumbnailFile);
+        formData.append("bucket", "publications");
+        
+        const result = await uploadFileAction(formData);
+        if (result.error) throw new Error("Gagal upload thumbnail: " + result.error);
+        
+        if (result.url) {
+          thumbnailUrl = result.url;
+        }
       }
 
       // 2. Upload attachment file
       if (attachmentFile) {
-        const fileName = `impact-file-${Date.now()}-${attachmentFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-        const { error: uploadErr } = await supabase.storage
-          .from("publications")
-          .upload(fileName, attachmentFile);
-        if (uploadErr)
-          throw new Error("Gagal upload file: " + uploadErr.message);
-
-        const res = supabase.storage
-          .from("publications")
-          .getPublicUrl(fileName);
-        fileUrl = res.data.publicUrl;
+        const formData = new FormData();
+        formData.append("file", attachmentFile);
+        formData.append("bucket", "publications");
+        
+        const result = await uploadFileAction(formData);
+        if (result.error) throw new Error("Gagal upload file: " + result.error);
+        
+        if (result.url) {
+          fileUrl = result.url;
+        }
       }
 
       // 3. Save to DB via server action

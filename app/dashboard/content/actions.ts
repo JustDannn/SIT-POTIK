@@ -96,10 +96,7 @@ export async function getContentList() {
 }
 
 export async function createContent(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
@@ -194,10 +191,7 @@ export async function updateContent(id: number, formData: FormData) {
  * Available to ALL roles.
  */
 export async function submitContentRequest(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
   const title = formData.get("title") as string;
@@ -224,10 +218,7 @@ export async function submitContentRequest(formData: FormData) {
   }
 }
 export async function updateContentStatus(id: number, status: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { success: false, error: "Unauthorized" };
 

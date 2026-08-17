@@ -3,8 +3,8 @@
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { createClient } from "@/utils/supabase/client";
 import { uploadMediaAsset, deleteMediaAsset } from "../actions";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import {
   Image as ImageIcon,
   Video,
@@ -62,7 +62,6 @@ const TYPE_COLORS = {
 
 export default function AssetGallery({ assets, folders }: AssetGalleryProps) {
   const router = useRouter();
-  const supabase = createClient();
   const [isPending, startTransition] = useTransition();
 
   // UI State
@@ -100,7 +99,6 @@ export default function AssetGallery({ assets, folders }: AssetGalleryProps) {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const fileName = `media-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
 
         // Determine type
         let type: "image" | "video" | "document" | "audio" = "document";
@@ -108,21 +106,18 @@ export default function AssetGallery({ assets, folders }: AssetGalleryProps) {
         else if (file.type.startsWith("video/")) type = "video";
         else if (file.type.startsWith("audio/")) type = "audio";
 
-        // Upload to Supabase
-        const { error: uploadError } = await supabase.storage
-          .from("media-assets")
-          .upload(fileName, file);
+        // Upload to server action
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("bucket", "media-assets");
 
-        if (uploadError) throw uploadError;
-
-        const { data } = supabase.storage
-          .from("media-assets")
-          .getPublicUrl(fileName);
+        const result = await uploadFileAction(formData);
+        if (result.error) throw new Error(result.error);
 
         // Save to database
         await uploadMediaAsset({
           filename: file.name,
-          url: data.publicUrl,
+          url: result.url!,
           size: file.size,
           type,
           mimeType: file.type,

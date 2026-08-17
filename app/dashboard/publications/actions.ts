@@ -5,6 +5,9 @@ import { publications } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+import { existsSync } from "fs";
 
 export async function getPublications(divisionId: number) {
   return await db.query.publications.findMany({
@@ -87,5 +90,88 @@ export async function updatePublication(
   } catch (error) {
     console.error("Update Error:", error);
     return { success: false, error: "Gagal update data." };
+  }
+}
+
+// SERVER ACTION: Upload Thumbnail
+export async function uploadThumbnail(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) {
+      return { success: false, error: "Tidak ada file yang diunggah" };
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Buat direktori jika belum ada
+    const uploadDir = join(process.cwd(), "public", "uploads", "thumbnails");
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
+
+    // Generate nama file unik
+    const timestamp = Date.now();
+    const ext = file.name.split(".").pop();
+    const fileName = `thumb-${timestamp}.${ext}`;
+    const filePath = join(uploadDir, fileName);
+
+    // Simpan file
+    await writeFile(filePath, buffer);
+
+    // Return public URL
+    const publicUrl = `/uploads/thumbnails/${fileName}`;
+    return { success: true, url: publicUrl };
+  } catch (error) {
+    console.error("Upload Thumbnail Error:", error);
+    return { success: false, error: "Gagal upload thumbnail" };
+  }
+}
+
+// SERVER ACTION: Upload Document (PDF/DOC)
+export async function uploadDocument(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) {
+      return { success: false, error: "Tidak ada file yang diunggah" };
+    }
+
+    // Validasi tipe file
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      return {
+        success: false,
+        error: "Tipe file tidak didukung (PDF/DOC/DOCX saja)",
+      };
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Buat direktori jika belum ada
+    const uploadDir = join(process.cwd(), "public", "uploads", "documents");
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
+
+    // Generate nama file unik
+    const timestamp = Date.now();
+    const ext = file.name.split(".").pop();
+    const fileName = `doc-${timestamp}.${ext}`;
+    const filePath = join(uploadDir, fileName);
+
+    // Simpan file
+    await writeFile(filePath, buffer);
+
+    // Return public URL
+    const publicUrl = `/uploads/documents/${fileName}`;
+    return { success: true, url: publicUrl };
+  } catch (error) {
+    console.error("Upload Document Error:", error);
+    return { success: false, error: "Gagal upload dokumen" };
   }
 }

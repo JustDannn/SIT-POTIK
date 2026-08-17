@@ -153,8 +153,7 @@ export default async function ProkerDetailPage({ params }: PageProps) {
       })),
     };
 
-    // 9. Render View
-    return <ProkerDetailView proker={formattedProker} user={userProfile} />;
+    return <ProkerDetailView proker={formattedProker as any} />;
   } catch (error) {
     console.error("Error fetching proker detail:", error);
     notFound();

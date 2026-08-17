@@ -3,8 +3,8 @@
 import React, { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { createClient } from "@/utils/supabase/client";
 import { createBrandKit, deleteBrandKit } from "../actions";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import {
   Palette,
   Type as TypeIcon,
@@ -81,7 +81,6 @@ const CATEGORIES = [
 
 export default function BrandKitGallery({ brandKits }: BrandKitGalleryProps) {
   const router = useRouter();
-  const supabase = createClient();
   const [isPending, startTransition] = useTransition();
 
   // UI State
@@ -128,27 +127,23 @@ export default function BrandKitGallery({ brandKits }: BrandKitGalleryProps) {
 
     setIsUploading(true);
     try {
-      const fileName = `brand-${Date.now()}-${uploadFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+      const formData = new FormData();
+      formData.append("file", uploadFile);
+      formData.append("bucket", "brand-kit");
 
-      const { error: uploadError } = await supabase.storage
-        .from("brand-kit")
-        .upload(fileName, uploadFile);
+      const result = await uploadFileAction(formData);
 
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from("brand-kit")
-        .getPublicUrl(fileName);
+      if (result.error) throw new Error(result.error);
 
       // Create thumbnail URL for images
       let thumbnailUrl = null;
       if (uploadFile.type.startsWith("image/")) {
-        thumbnailUrl = data.publicUrl;
+        thumbnailUrl = result.url;
       }
 
       await createBrandKit({
         ...uploadForm,
-        fileUrl: data.publicUrl,
+        fileUrl: result.url!,
         thumbnailUrl: thumbnailUrl || undefined,
       });
 

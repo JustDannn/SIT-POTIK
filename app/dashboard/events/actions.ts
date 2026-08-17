@@ -188,10 +188,7 @@ export async function getEventById(eventId: number) {
 
 // CREATE NEW EVENT
 export async function createEvent(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { error: "Unauthorized" };
 
@@ -326,10 +323,7 @@ export async function removeParticipant(
 
 // CREATE IMPACT STORY LINKED TO EVENT
 export async function createImpactStory(eventId: number, formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { error: "Unauthorized" };
 
@@ -405,10 +399,7 @@ export async function updateImpactStory(
   eventId: number,
   formData: FormData,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return { error: "Unauthorized" };
 
@@ -471,10 +462,7 @@ export async function addEventLog(
   note: string,
   type: "program" | "proker" = "program",
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: "Unauthorized" };
 
   try {
@@ -509,10 +497,7 @@ export async function addEventTask(
   assigneeId?: string,
   type: "program" | "proker" = "program",
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: "Unauthorized" };
 
   try {
@@ -553,10 +538,7 @@ export async function addEventTask(
 
 // TOGGLE TASK STATUS (Todo <-> Done) + LOG
 export async function toggleTaskStatus(taskId: number, currentStatus: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: "Unauthorized" };
 
   try {
@@ -592,10 +574,7 @@ export async function toggleTaskStatus(taskId: number, currentStatus: string) {
 
 // DELETE EVENT/PROKER TASK + LOG
 export async function deleteEventTask(taskId: number) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return { error: "Unauthorized" };
 
   try {

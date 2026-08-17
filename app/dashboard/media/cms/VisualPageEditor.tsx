@@ -3,8 +3,8 @@
 import React, { useState, useTransition, useRef, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { saveCMSFields } from "./actions";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import type { PageDefinition, PageField } from "./types";
 import {
   Save,
@@ -85,7 +85,6 @@ export default function VisualPageEditor({
   availablePages?: { slug: string; title: string; previewUrl: string }[];
 }) {
   const router = useRouter();
-  const supabase = createClient();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -157,14 +156,16 @@ export default function VisualPageEditor({
     setUploadingKey(uploadKey);
 
     try {
-      const fileName = `cms-${sectionId}-${key}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-      const { error } = await supabase.storage
-        .from("cms")
-        .upload(fileName, file);
-      if (error) throw error;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "cms");
 
-      const { data } = supabase.storage.from("cms").getPublicUrl(fileName);
-      setFieldValue(sectionId, key, data.publicUrl);
+      const result = await uploadFileAction(formData);
+      if (result.error) throw new Error(result.error);
+
+      if (result.url) {
+        setFieldValue(sectionId, key, result.url);
+      }
     } catch (err) {
       console.error("Upload failed:", err);
       alert("Upload gagal. Coba lagi.");

@@ -117,11 +117,6 @@ function findSectionDefaults(section: string): Record<string, string> {
 export async function getCMSSection(
   section: string,
 ): Promise<Record<string, string>> {
-  const user = await getCurrentUser();
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-
   const rows = await db.query.siteConfig.findMany({
     where: eq(siteConfig.section, section),
   });

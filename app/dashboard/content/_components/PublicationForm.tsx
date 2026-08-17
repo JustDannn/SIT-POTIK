@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { uploadFileAction } from "@/app/dashboard/actions";
 import {
   Save,
   ArrowLeft,
@@ -51,7 +51,6 @@ export default function PublicationForm({
   initialData?: Publication | null;
 }) {
   const router = useRouter();
-  const supabase = createClient();
   const isEditing = !!initialData;
 
   // --- STATE ---
@@ -97,18 +96,15 @@ export default function PublicationForm({
       let fileUrl = formData.fileUrl;
 
       if (thumbnailFile) {
-        const fileName = `pub-${Date.now()}-${thumbnailFile.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-        const { error: uploadError } = await supabase.storage
-          .from("publications")
-          .upload(fileName, thumbnailFile);
+        const fileForm = new FormData();
+        fileForm.append("file", thumbnailFile);
+        fileForm.append("bucket", "publications");
 
-        if (uploadError) throw uploadError;
-
-        const res = supabase.storage
-          .from("publications")
-          .getPublicUrl(fileName);
-
-        fileUrl = res.data.publicUrl;
+        const result = await uploadFileAction(fileForm);
+        if (result.error) throw new Error(result.error);
+        if (result.url) {
+          fileUrl = result.url;
+        }
       }
 
       // Prepare FormData
