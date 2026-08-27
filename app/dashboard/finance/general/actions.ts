@@ -42,17 +42,28 @@ export async function getGeneralFinance() {
 // GENERAL TRANSACTION
 export async function addGeneralTransaction(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) return { success: false, error: "Unauthorized" };
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
 
   const amount = formData.get("amount") as string;
   const type = formData.get("type") as "income" | "expense";
   const description = formData.get("description") as string;
   const dateStr = formData.get("date") as string;
 
+  // Validasi nominal
+  if (!amount || Number(amount) <= 0) {
+    return {
+      success: false,
+      error: "Nominal harus lebih dari 0 rupiah",
+    };
+  }
+
   try {
     await db.insert(financeRecords).values({
       prokerId: null,
-      amount: amount,
+      amount,
       type,
       description,
       date: new Date(dateStr),
@@ -60,9 +71,14 @@ export async function addGeneralTransaction(formData: FormData) {
     });
 
     revalidatePath("/dashboard/finance/general");
+
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { success: false, error: "Gagal menyimpan transaksi" };
+
+    return {
+      success: false,
+      error: "Gagal menyimpan transaksi",
+    };
   }
 }

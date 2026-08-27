@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addGeneralTransaction } from "../actions";
-import { ArrowLeft, Loader2, Save,  } from "lucide-react";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
 
 export default function AddGeneralTransactionPage() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function AddGeneralTransactionPage() {
     if (res.success) {
       router.push("/dashboard/finance/general");
     } else {
-      alert("Gagal menyimpan!");
+      alert(res.error ?? "Gagal menyimpan!");
       setLoading(false);
     }
   }
@@ -87,7 +87,7 @@ export default function AddGeneralTransactionPage() {
                 required
                 name="amount"
                 type="number"
-                min="0"
+                min="1"
                 placeholder="0"
                 className="w-full pl-10 pr-4 py-3 text-lg font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none"
               />
