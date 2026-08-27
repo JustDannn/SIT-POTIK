@@ -43,49 +43,66 @@ export async function getArchives(query: string = "", category: string = "") {
 // UPLOAD ACTION (Simpan file ke folder lokal /public/uploads)
 export async function uploadArchive(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) return { success: false, error: "Unauthorized" };
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" };
+  }
 
   const title = formData.get("title") as string;
   const category = formData.get("category") as ArchiveCategory;
   const description = formData.get("description") as string;
   const file = formData.get("file") as File;
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
   if (!file || file.size === 0) {
-    return { success: false, error: "File wajib diupload" };
+    return {
+      success: false,
+      error: "File wajib diupload",
+    };
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      success: false,
+      error: "Ukuran file maksimal 5 MB",
+    };
   }
 
   try {
-    // 1. Ubah file jadi buffer buat disimpan ke server lokal
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // 2. Bikin nama unik buat filenya
     const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+
     const uploadDir = path.join(process.cwd(), "public/uploads");
     const filePath = path.join(uploadDir, fileName);
 
-    // Pastikan folder /public/uploads ada (Next.js biasanya otomatis, tapi aman ditulis)
     await writeFile(filePath, buffer);
 
-    // 3. URL publik untuk diakses di frontend
     const fileUrl = `/uploads/${fileName}`;
 
-    // 4. Simpan path-nya ke database Drizzle
     await db.insert(archives).values({
       title,
       category,
       description,
-      fileUrl: fileUrl,
+      fileUrl,
       uploadedBy: user.id,
     });
 
     revalidatePath("/dashboard/archives");
+
     return { success: true };
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Gagal upload dokumen";
+
     console.error(error);
-    return { success: false, error: message };
+
+    return {
+      success: false,
+      error: message,
+    };
   }
 }
 

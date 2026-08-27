@@ -21,7 +21,10 @@ import { cn } from "@/lib/utils";
 export default async function ArchivesPage({
   searchParams,
 }: {
-  searchParams: { q?: string; cat?: string };
+  searchParams: Promise<{
+    q?: string;
+    cat?: string;
+  }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -30,8 +33,7 @@ export default async function ArchivesPage({
   const roleName = dbUser?.role?.roleName ?? "";
   const canManage = roleName === "Sekretaris" || roleName === "Ketua";
 
-  const query = searchParams.q || "";
-  const category = searchParams.cat || "all";
+  const { q: query = "", cat: category = "all" } = await searchParams;
 
   const data = await getArchives(query, category);
 
