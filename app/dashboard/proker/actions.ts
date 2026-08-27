@@ -200,21 +200,42 @@ export async function getProkerDetail(prokerId: number) {
 
 export async function createProker(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) return;
+
+  if (!user) return { error: "Unauthorized" };
 
   const userProfile = await db.query.users.findFirst({
     where: eq(users.id, user.id),
   });
 
-  if (!userProfile?.divisionId) return { error: "No Division Assigned" };
+  if (!userProfile?.divisionId) {
+    return { error: "No Division Assigned" };
+  }
+
+  const startDateValue = formData.get("startDate") as string;
+  const endDateValue = formData.get("endDate") as string;
+
+  const startDate = new Date(startDateValue);
+  const endDate = new Date(endDateValue);
+
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return {
+      error: "Tanggal mulai dan tanggal selesai harus valid.",
+    };
+  }
+
+  if (endDate < startDate) {
+    return {
+      error: "Tanggal selesai tidak boleh sebelum tanggal mulai.",
+    };
+  }
 
   await db.insert(prokers).values({
     title: formData.get("title") as string,
     description: formData.get("description") as string,
-    divisionId: userProfile.divisionId, // Otomatis masuk ke divisi user login
-    picUserId: userProfile.id, // Default PIC diri sendiri
-    startDate: new Date(formData.get("startDate") as string),
-    endDate: new Date(formData.get("endDate") as string),
+    divisionId: userProfile.divisionId,
+    picUserId: userProfile.id,
+    startDate,
+    endDate,
     status: "created",
   });
 

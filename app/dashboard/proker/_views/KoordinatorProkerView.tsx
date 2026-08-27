@@ -47,18 +47,21 @@ export default function KoordinatorProkerView({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "gantt">("card");
+  const [startDate, setStartDate] = useState("");
 
   const uniqueData = useMemo(() => {
     const seen = new Set<string>();
+
     return data.filter((item) => {
       const key = `${item.type ?? "proker"}-${item.id}`;
+
       if (seen.has(key)) return false;
+
       seen.add(key);
       return true;
     });
   }, [data]);
 
-  // Ambil nama divisi dari user profile
   const divisionName = user.division?.divisionName || "Divisi Saya";
 
   return (
@@ -304,21 +307,27 @@ export default function KoordinatorProkerView({
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     Tanggal Mulai
                   </label>
+
                   <input
                     type="date"
                     name="startDate"
                     required
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
                     Tanggal Selesai
                   </label>
+
                   <input
                     type="date"
                     name="endDate"
                     required
+                    min={startDate || undefined}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
