@@ -871,28 +871,124 @@ export async function uploadFileAction(formData: FormData) {
   const bucket = formData.get("bucket") as string | null;
 
   if (!file || !bucket) {
-    return { error: "File and bucket are required." };
+    return {
+      error: "File and bucket are required.",
+    };
+  }
+
+  // ALLOWED FILE TYPES
+
+  const ALLOWED_FILES: Record<
+    string,
+    { extensions: string[]; mimeTypes: string[] }
+  > = {
+    "brand-kit": {
+      extensions: [
+        "png",
+        "jpg",
+        "jpeg",
+        "svg",
+        "webp",
+        "gif",
+        "pdf",
+        "ai",
+        "eps",
+        "ttf",
+        "otf",
+        "woff",
+        "woff2",
+      ],
+      mimeTypes: [
+        "image/png",
+        "image/jpeg",
+        "image/svg+xml",
+        "image/webp",
+        "image/gif",
+        "application/pdf",
+        "application/postscript",
+        "application/vnd.adobe.illustrator",
+        "font/ttf",
+        "font/otf",
+        "font/woff",
+        "font/woff2",
+        "application/font-sfnt",
+        "application/x-font-ttf",
+        "application/x-font-opentype",
+      ],
+    },
+  };
+
+  const config = ALLOWED_FILES[bucket];
+
+  // Bucket tidak terdaftar
+  if (!config) {
+    return {
+      error: "Invalid upload bucket.",
+    };
+  }
+
+  // VALIDATE FILE SIZE
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      error: "Ukuran file maksimal adalah 10 MB.",
+    };
+  }
+
+  // VALIDATE EXTENSION
+
+  const extension = file.name.split(".").pop()?.toLowerCase();
+
+  if (!extension || !config.extensions.includes(extension)) {
+    return {
+      error: `Tipe file .${extension || "unknown"} tidak diizinkan.`,
+    };
+  }
+
+  // VALIDATE MIME TYPE
+
+  if (!config.mimeTypes.includes(file.type)) {
+    return {
+      error: `Format file ${file.type || "unknown"} tidak diizinkan.`,
+    };
   }
 
   try {
+    // READ FILE
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.]/g, "");
+    // SANITIZE FILENAME
+
+    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "");
+
     const fileName = `${Date.now()}-${sanitizedFilename}`;
+
+    // CREATE UPLOAD DIRECTORY
+
     const uploadDir = path.join(process.cwd(), "public", "uploads", bucket);
-    
+
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+      fs.mkdirSync(uploadDir, {
+        recursive: true,
+      });
     }
 
     const filepath = path.join(uploadDir, fileName);
+
     await writeFile(filepath, buffer);
 
-    return { url: `/uploads/${bucket}/${fileName}` };
+    return {
+      url: `/uploads/${bucket}/${fileName}`,
+    };
   } catch (error) {
     console.error("Upload error:", error);
-    return { error: "Failed to upload file." };
+
+    return {
+      error: "Failed to upload file.",
+    };
   }
 }
-

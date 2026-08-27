@@ -108,58 +108,121 @@ export default function BrandKitGallery({ brandKits }: BrandKitGalleryProps) {
     selectedCategory === "all"
       ? brandKits
       : brandKits.filter((k) => k.category === selectedCategory);
+  const ALLOWED_FILE_TYPES = [
+    "image/png",
+    "image/jpeg",
+    "image/svg+xml",
+    "image/webp",
+    "image/gif",
+    "application/pdf",
+    "font/ttf",
+    "font/otf",
+    "font/woff",
+    "font/woff2",
+  ];
 
+  const ALLOWED_EXTENSIONS = [
+    "png",
+    "jpg",
+    "jpeg",
+    "svg",
+    "webp",
+    "gif",
+    "pdf",
+    "ai",
+    "eps",
+    "ttf",
+    "otf",
+    "woff",
+    "woff2",
+  ];
+
+  const isAllowedFile = (file: File) => {
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    return (
+      ALLOWED_FILE_TYPES.includes(file.type) ||
+      (extension && ALLOWED_EXTENSIONS.includes(extension))
+    );
+  };
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setUploadFile(file);
-      if (file.type.startsWith("image/")) {
-        setUploadPreview(URL.createObjectURL(file));
-      } else {
-        setUploadPreview(null);
-      }
+
+    if (!file) return;
+
+    if (!isAllowedFile(file)) {
+      alert(
+        "Format file tidak didukung. Silakan upload PNG, JPG, JPEG, SVG, WEBP, GIF, PDF, AI, EPS, TTF, OTF, WOFF, atau WOFF2.",
+      );
+
+      e.target.value = "";
+      return;
+    }
+
+    setUploadFile(file);
+
+    if (file.type.startsWith("image/")) {
+      setUploadPreview(URL.createObjectURL(file));
+    } else {
+      setUploadPreview(null);
     }
   };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!uploadFile) return;
 
     setIsUploading(true);
+
     try {
+      // Upload file ke server
       const formData = new FormData();
       formData.append("file", uploadFile);
       formData.append("bucket", "brand-kit");
 
       const result = await uploadFileAction(formData);
 
-      if (result.error) throw new Error(result.error);
+      if (result.error || !result.url) {
+        throw new Error(result.error || "Upload file gagal.");
+      }
 
-      // Create thumbnail URL for images
-      let thumbnailUrl = null;
+      // Thumbnail hanya untuk file gambar
+      let thumbnailUrl: string | undefined;
+
       if (uploadFile.type.startsWith("image/")) {
         thumbnailUrl = result.url;
       }
 
+      // Simpan metadata Brand Kit ke database
       await createBrandKit({
         ...uploadForm,
-        fileUrl: result.url!,
-        thumbnailUrl: thumbnailUrl || undefined,
+        fileUrl: result.url,
+        thumbnailUrl,
       });
 
+      // Reset UI
       setShowUploadModal(false);
       setUploadFile(null);
       setUploadPreview(null);
+
       setUploadForm({
         name: "",
         category: "logo",
         description: "",
         version: "1.0",
       });
+
+      // Refresh data
       router.refresh();
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Upload gagal. Silakan coba lagi.");
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Upload gagal. Silakan coba lagi.",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -186,44 +249,38 @@ export default function BrandKitGallery({ brandKits }: BrandKitGalleryProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Category Tabs + Add Asset */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Brand Kit</h2>
-          <p className="text-sm text-gray-500">
-            Official logos, fonts, and design guidelines
-          </p>
+        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={cn(
+                "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
+                selectedCategory === cat.id
+                  ? "bg-violet-100 text-violet-700"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+              )}
+            >
+              {cat.label}
+
+              {cat.id !== "all" && (
+                <span className="ml-1.5 text-xs opacity-70">
+                  ({brandKits.filter((k) => k.category === cat.id).length})
+                </span>
+              )}
+            </button>
+          ))}
         </div>
+
         <button
           onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-bold hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200"
+          className="flex shrink-0 items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-bold hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200"
         >
           <Plus size={18} />
           Add Asset
         </button>
-      </div>
-
-      {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={cn(
-              "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-              selectedCategory === cat.id
-                ? "bg-violet-100 text-violet-700"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200",
-            )}
-          >
-            {cat.label}
-            {cat.id !== "all" && (
-              <span className="ml-1.5 text-xs opacity-70">
-                ({brandKits.filter((k) => k.category === cat.id).length})
-              </span>
-            )}
-          </button>
-        ))}
       </div>
 
       {/* Gallery Grid */}
