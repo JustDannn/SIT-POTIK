@@ -60,7 +60,10 @@ export default async function ArticleDetailPage({
           <span className="text-indigo-600 font-bold uppercase tracking-wider text-sm mb-2 block">
             {data.category}
           </span>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+          <h1
+            className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight break-words"
+            style={{ overflowWrap: "anywhere" }}
+          >
             {data.title}
           </h1>
 
@@ -91,9 +94,10 @@ export default async function ArticleDetailPage({
         </div>
 
         {/* Article Content */}
-        <div className="prose prose-lg prose-indigo max-w-none text-gray-700 leading-relaxed">
-          {/* Render Content (Kalau HTML string bisa pake dangerouslySetInnerHTML) */}
-          {/* Untuk MVP kita tampilkan raw text di-breaklines */}
+        <div
+          className="prose prose-lg prose-indigo max-w-none text-gray-700 leading-relaxed"
+          style={{ overflowWrap: "anywhere" }}
+        >
           {data.content?.split("\n").map((paragraph, idx) => (
             <p key={idx} className="mb-4">
               {paragraph}

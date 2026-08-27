@@ -181,14 +181,19 @@ export default function PublicationForm({
         <div className="lg:col-span-2 space-y-6">
           {/* Title Input */}
           <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm group focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
-            <input
+            <textarea
               required
+              rows={1}
               placeholder="Judul Artikel yang Menarik..."
-              className="w-full text-3xl font-extrabold text-gray-900 placeholder:text-gray-300 border-none outline-none bg-transparent"
+              className="w-full text-3xl font-extrabold text-gray-900 placeholder:text-gray-300 border-none outline-none bg-transparent resize-none overflow-hidden leading-tight"
+              style={{ overflowWrap: "anywhere" }}
               value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value });
+
+                e.target.style.height = "auto";
+                e.target.style.height = `${e.target.scrollHeight}px`;
+              }}
             />
             <div className="mt-2 text-xs text-gray-400 flex items-center gap-2">
               <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-mono">
