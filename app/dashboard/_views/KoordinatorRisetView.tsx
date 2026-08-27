@@ -12,13 +12,35 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+interface KoordinatorRisetUser {
+  name: string;
+  division: {
+    divisionName: string;
+  };
+}
 
+interface RecentUpload {
+  id: number;
+  title: string;
+  category: string;
+  status: string;
+  createdAt: string | Date;
+}
+
+interface KoordinatorRisetData {
+  stats: {
+    articles: number;
+    infographics: number;
+    pending: number;
+  };
+  recentUploads: RecentUpload[];
+}
 export default function KoordinatorRisetView({
   user,
   data,
 }: {
-  user: any;
-  data: any;
+  user: KoordinatorRisetUser;
+  data: KoordinatorRisetData;
 }) {
   const { stats, recentUploads } = data;
 
@@ -122,7 +144,7 @@ export default function KoordinatorRisetView({
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {recentUploads.map((item: any) => (
+                {recentUploads.map((item) => (
                   <div
                     key={item.id}
                     className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
@@ -152,7 +174,15 @@ export default function KoordinatorRisetView({
                             {item.category}
                           </span>
                           <span className="text-xs text-gray-400">
-                            • {new Date(item.createdAt).toLocaleDateString()}
+                            •{" "}
+                            {new Date(item.createdAt).toLocaleDateString(
+                              "id-ID",
+                              {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              },
+                            )}
                           </span>
                         </div>
                       </div>

@@ -49,6 +49,11 @@ export default async function DashboardPage() {
     },
   });
 
+  console.log("SESSION USER:", user);
+  console.log("DB PROFILE:", userProfile);
+  console.log("ROLE:", userProfile?.role?.roleName);
+  console.log("DIVISION:", userProfile?.division?.divisionName);
+
   if (!userProfile?.role)
     return <div className="p-8">Error: Role missing. Hubungi Admin.</div>;
 

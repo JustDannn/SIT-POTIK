@@ -12,16 +12,23 @@ import { logoutAction } from "@/actions/auth";
 import { createAvatar } from "@dicebear/core";
 import { dylan } from "@dicebear/collection";
 
-interface SidebarProps {
-  user: {
-    name: string;
-    email: string;
-    role: string;
-    avatarUrl?: string;
-  };
+interface SidebarUser {
+  name: string;
+  email: string;
+  role?: {
+    roleName: string;
+  } | null;
+  division?: {
+    divisionName: string;
+  } | null;
+  avatarUrl?: string;
 }
 
-export default function Sidebar({ user }: { user: any }) {
+interface SidebarProps {
+  user: SidebarUser;
+}
+
+export default function Sidebar({ user }: SidebarProps) {
   const handleLogout = async () => {
     await logoutAction();
   };
