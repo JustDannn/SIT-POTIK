@@ -5,17 +5,15 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "encrypted-tbn0.gstatic.com",
-      },
-      {
-        protocol: "https",
-        hostname: "urmwjziuaoapbhsvzjbq.supabase.co",
-      },
-      {
-        protocol: "https",
-        hostname: "awsimages.detik.net.id",
+        hostname: "**",
       },
     ],
+  },
+
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "5mb",
+    },
   },
 };
 
