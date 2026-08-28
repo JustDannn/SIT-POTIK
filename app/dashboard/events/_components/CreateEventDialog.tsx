@@ -194,20 +194,56 @@ export default function CreateEventDialog({
                 <div className="flex gap-2">
                   <input
                     type="date"
-                    className="flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                    className="flex-1 bg-white border border-gray-200 text-gray-700 rounded-lg px-2 py-1.5 text-sm"
                     value={formData.startDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startDate: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newStartDate = e.target.value;
+                      setFormData((prev) => {
+                        const isEndBeforeStart =
+                          prev.endDate && prev.endDate < newStartDate;
+                        const isSameDay = prev.endDate === newStartDate;
+                        const isEndTimeBeforeStartTime =
+                          isSameDay &&
+                          prev.endTime &&
+                          prev.startTime &&
+                          prev.endTime < prev.startTime;
+
+                        return {
+                          ...prev,
+                          startDate: newStartDate,
+                          endDate: isEndBeforeStart ? "" : prev.endDate,
+                          endTime:
+                            isEndBeforeStart || isEndTimeBeforeStartTime
+                              ? ""
+                              : prev.endTime,
+                        };
+                      });
+                    }}
                     required
                   />
                   <input
                     type="time"
-                    className="w-24 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                    className="w-24 bg-white border border-gray-200 text-gray-700 rounded-lg px-2 py-1.5 text-sm"
                     value={formData.startTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startTime: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newStartTime = e.target.value;
+                      setFormData((prev) => {
+                        const isSameDay =
+                          prev.startDate &&
+                          prev.endDate &&
+                          prev.startDate === prev.endDate;
+                        const isEndTimeBeforeStartTime =
+                          isSameDay &&
+                          prev.endTime &&
+                          prev.endTime < newStartTime;
+
+                        return {
+                          ...prev,
+                          startTime: newStartTime,
+                          endTime: isEndTimeBeforeStartTime ? "" : prev.endTime,
+                        };
+                      });
+                    }}
                   />
                 </div>
               </div>
@@ -218,15 +254,37 @@ export default function CreateEventDialog({
                 <div className="flex gap-2">
                   <input
                     type="date"
-                    className="flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                    min={formData.startDate || undefined}
+                    className="flex-1 bg-white border border-gray-200 text-gray-700 rounded-lg px-2 py-1.5 text-sm"
                     value={formData.endDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endDate: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const newEndDate = e.target.value;
+                      setFormData((prev) => {
+                        const isSameDay = prev.startDate === newEndDate;
+                        const isEndTimeBeforeStartTime =
+                          isSameDay &&
+                          prev.startTime &&
+                          prev.endTime &&
+                          prev.endTime < prev.startTime;
+
+                        return {
+                          ...prev,
+                          endDate: newEndDate,
+                          endTime: isEndTimeBeforeStartTime ? "" : prev.endTime,
+                        };
+                      });
+                    }}
                   />
                   <input
                     type="time"
-                    className="w-24 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-sm"
+                    min={
+                      formData.startDate &&
+                      formData.endDate &&
+                      formData.startDate === formData.endDate
+                        ? formData.startTime || undefined
+                        : undefined
+                    }
+                    className="w-24 bg-white border border-gray-200 text-gray-700 rounded-lg px-2 py-1.5 text-sm"
                     value={formData.endTime}
                     onChange={(e) =>
                       setFormData({ ...formData, endTime: e.target.value })
