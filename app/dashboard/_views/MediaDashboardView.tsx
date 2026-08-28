@@ -118,11 +118,11 @@ export default function MediaDashboardView({
             CMS Editor
           </Link>
           <Link
-            href="/dashboard/media/campaigns/create"
+            href="/dashboard/media/campaigns"
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-bold transition-colors hover:border-gray-300"
           >
             <PenTool size={18} />
-            New Campaign
+            Campaign Calendar
           </Link>
         </div>
       </div>
@@ -324,7 +324,7 @@ export default function MediaDashboardView({
                 return (
                   <Link
                     key={campaign.id}
-                    href={`/dashboard/media/campaigns/${campaign.id}`}
+                    href="/dashboard/media/campaigns"
                     className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     <div

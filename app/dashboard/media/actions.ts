@@ -550,6 +550,7 @@ export async function createCampaign(data: {
   designRequestId?: number;
 }) {
   const user = await getCurrentUser();
+
   if (!user) throw new Error("Unauthorized");
 
   const result = await db
@@ -557,10 +558,12 @@ export async function createCampaign(data: {
     .values({
       ...data,
       picId: user.id,
+      status: data.scheduledDate ? "scheduled" : "draft",
     })
     .returning();
 
   revalidatePath("/dashboard/media/campaigns");
+
   return result[0];
 }
 

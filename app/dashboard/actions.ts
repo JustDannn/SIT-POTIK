@@ -877,10 +877,13 @@ export async function uploadFileAction(formData: FormData) {
   }
 
   // ALLOWED FILE TYPES
-
   const ALLOWED_FILES: Record<
     string,
-    { extensions: string[]; mimeTypes: string[] }
+    {
+      extensions: string[];
+      mimeTypes: string[];
+      maxSize: number;
+    }
   > = {
     "brand-kit": {
       extensions: [
@@ -898,6 +901,7 @@ export async function uploadFileAction(formData: FormData) {
         "woff",
         "woff2",
       ],
+
       mimeTypes: [
         "image/png",
         "image/jpeg",
@@ -915,25 +919,39 @@ export async function uploadFileAction(formData: FormData) {
         "application/x-font-ttf",
         "application/x-font-opentype",
       ],
+
+      maxSize: 5 * 1024 * 1024, // 5 MB
+    },
+
+    campaigns: {
+      extensions: ["png", "jpg", "jpeg", "webp", "gif", "mp4", "mov"],
+
+      mimeTypes: [
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "image/gif",
+        "video/mp4",
+        "video/quicktime",
+      ],
+
+      maxSize: 50 * 1024 * 1024, // 50 MB
     },
   };
 
   const config = ALLOWED_FILES[bucket];
 
-  // Bucket tidak terdaftar
   if (!config) {
     return {
       error: "Invalid upload bucket.",
     };
   }
 
-  // VALIDATE FILE SIZE
-
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-
-  if (file.size > MAX_FILE_SIZE) {
+  if (file.size > config.maxSize) {
     return {
-      error: "Ukuran file maksimal adalah 10 MB.",
+      error: `Ukuran file maksimal adalah ${
+        config.maxSize / (1024 * 1024)
+      } MB.`,
     };
   }
 

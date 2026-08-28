@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,19 +15,12 @@ import {
   CheckCircle2,
   Edit3,
 } from "lucide-react";
+import { publishCampaign, updateCampaign } from "../actions";
 import { cn } from "@/lib/utils";
+import CampaignModal, { Campaign } from "./CampaignModal";
+import CampaignPreviewModal from "./CampaignPreviewModal";
 
-interface Campaign {
-  id: number;
-  title: string;
-  platform: string;
-  status: string | null;
-  scheduledDate: Date | null;
-  publishedDate: Date | null;
-  caption: string | null;
-  assetUrl: string | null;
-  pic: { name: string } | null;
-}
+
 
 interface CampaignCalendarProps {
   campaigns: Campaign[];
@@ -62,11 +54,65 @@ const STATUS_STYLES: Record<string, string> = {
   published: "bg-green-100 text-green-700",
   archived: "bg-slate-100 text-slate-600",
 };
-
 export default function CampaignCalendar({ campaigns }: CampaignCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"month" | "week">("month");
+  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] =
+    useState<Campaign | null>(null);
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewCampaign, setPreviewCampaign] = useState<Campaign | null>(null);
+
+  const openCreateModal = () => {
+    setSelectedCampaign(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedCampaign(null);
+  };
+
+  const openPreviewModal = (campaign: Campaign) => {
+    setPreviewCampaign(campaign);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreviewModal = () => {
+    setIsPreviewOpen(false);
+    setPreviewCampaign(null);
+  };
+
+  const handleStatusChange = async (
+    campaignId: number,
+    status: "scheduled" | "published",
+  ) => {
+    try {
+      setUpdatingStatus(campaignId);
+
+      if (status === "published") {
+        await publishCampaign(campaignId);
+      } else {
+        await updateCampaign(campaignId, {
+          status: "scheduled",
+        });
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to update campaign status:", error);
+      alert("Gagal mengubah status campaign.");
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
   // Get calendar data
   const calendarData = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -134,25 +180,15 @@ export default function CampaignCalendar({ campaigns }: CampaignCalendarProps) {
     return date.getMonth() === currentDate.getMonth();
   };
 
-  // Weekly stats
+  // Stats by status (total, not just this week)
   const weeklyStats = useMemo(() => {
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const scheduled = campaigns.filter(
+      (c) => c.status === "scheduled",
+    ).length;
 
-    const scheduled = campaigns.filter((c) => {
-      if (!c.scheduledDate) return false;
-      const d = new Date(c.scheduledDate);
-      return d >= startOfWeek && d <= endOfWeek && c.status === "scheduled";
-    }).length;
-
-    const published = campaigns.filter((c) => {
-      if (!c.publishedDate) return false;
-      const d = new Date(c.publishedDate);
-      return d >= startOfWeek && d <= endOfWeek && c.status === "published";
-    }).length;
+    const published = campaigns.filter(
+      (c) => c.status === "published",
+    ).length;
 
     return { scheduled, published };
   }, [campaigns]);
@@ -202,13 +238,14 @@ export default function CampaignCalendar({ campaigns }: CampaignCalendarProps) {
               {weeklyStats.published} published
             </span>
           </div>
-          <Link
-            href="/dashboard/media/campaigns/create"
+          <button
+            type="button"
+            onClick={openCreateModal}
             className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-bold hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200"
           >
             <Plus size={16} />
             New Campaign
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -264,18 +301,19 @@ export default function CampaignCalendar({ campaigns }: CampaignCalendarProps) {
                     const PlatformIcon =
                       PLATFORM_ICONS[campaign.platform] || Globe;
                     return (
-                      <Link
+                      <button
                         key={campaign.id}
-                        href={`/dashboard/media/campaigns/${campaign.id}`}
+                        type="button"
+                        onClick={() => openPreviewModal(campaign)}
                         className={cn(
-                          "group flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium truncate transition-all hover:scale-[1.02]",
+                          "group w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium truncate transition-all hover:scale-[1.02] text-left cursor-pointer",
                           PLATFORM_COLORS[campaign.platform] ||
                             "bg-gray-100 text-gray-700",
                         )}
                       >
                         <PlatformIcon size={12} />
                         <span className="truncate">{campaign.title}</span>
-                      </Link>
+                      </button>
                     );
                   })}
                   {dayCampaigns.length > 3 && (
@@ -312,7 +350,8 @@ export default function CampaignCalendar({ campaigns }: CampaignCalendarProps) {
               return (
                 <div
                   key={campaign.id}
-                  className="flex items-center gap-4 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
+                  onClick={() => openPreviewModal(campaign)}
+                  className="flex items-center gap-4 p-3 rounded-xl border border-gray-100 hover:bg-gray-50/80 transition-colors cursor-pointer"
                 >
                   {/* Platform Badge */}
                   <div
@@ -348,22 +387,39 @@ export default function CampaignCalendar({ campaigns }: CampaignCalendarProps) {
                   </div>
 
                   {/* Status */}
-                  <span
+                  <select
+                    value={campaign.status || "scheduled"}
+                    disabled={updatingStatus === campaign.id}
+                    onChange={(e) =>
+                      handleStatusChange(
+                        campaign.id,
+                        e.target.value as "scheduled" | "published",
+                      )
+                    }
+                    onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-semibold capitalize",
-                      STATUS_STYLES[campaign.status || "draft"],
+                      "px-2.5 py-1 rounded-lg text-xs font-semibold capitalize border-0 outline-none cursor-pointer",
+                      STATUS_STYLES[campaign.status || "scheduled"],
+                      updatingStatus === campaign.id &&
+                        "opacity-50 cursor-wait",
                     )}
                   >
-                    {campaign.status}
-                  </span>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="published">Published</option>
+                  </select>
 
                   {/* Actions */}
-                  <Link
-                    href={`/dashboard/media/campaigns/${campaign.id}`}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500"
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditModal(campaign);
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900"
+                    title="Edit Campaign"
                   >
                     <Edit3 size={16} />
-                  </Link>
+                  </button>
                 </div>
               );
             })}
@@ -377,16 +433,38 @@ export default function CampaignCalendar({ campaigns }: CampaignCalendarProps) {
             <div className="text-center py-8 text-gray-500">
               <CalendarIcon className="mx-auto mb-2 text-gray-300" size={32} />
               <p className="text-sm">No upcoming campaigns scheduled.</p>
-              <Link
-                href="/dashboard/media/campaigns/create"
+              <button
+                type="button"
+                onClick={openCreateModal}
                 className="text-sm text-violet-600 font-medium hover:underline"
               >
                 Create one now
-              </Link>
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <CampaignPreviewModal
+        open={isPreviewOpen}
+        campaign={previewCampaign}
+        onClose={closePreviewModal}
+        onEdit={(campaign) => {
+          closePreviewModal();
+          openEditModal(campaign);
+        }}
+      />
+
+      {/* Create / Edit Form Modal */}
+      <CampaignModal
+        open={isModalOpen}
+        onClose={closeModal}
+        campaign={selectedCampaign}
+        onSuccess={() => {
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }
