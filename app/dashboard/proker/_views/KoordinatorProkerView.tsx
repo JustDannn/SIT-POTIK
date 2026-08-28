@@ -285,7 +285,7 @@ export default function KoordinatorProkerView({
                   name="title"
                   required
                   placeholder="Contoh: Workshop Public Speaking"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
@@ -298,7 +298,7 @@ export default function KoordinatorProkerView({
                   rows={3}
                   required
                   placeholder="Tujuan dan gambaran singkat kegiatan..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
@@ -314,7 +314,7 @@ export default function KoordinatorProkerView({
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
 
@@ -328,7 +328,7 @@ export default function KoordinatorProkerView({
                     name="endDate"
                     required
                     min={startDate || undefined}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
               </div>
