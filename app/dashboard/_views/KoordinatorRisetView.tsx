@@ -16,15 +16,15 @@ interface KoordinatorRisetUser {
   name: string;
   division: {
     divisionName: string;
-  };
+  } | null;
 }
 
 interface RecentUpload {
   id: number;
   title: string;
   category: string;
-  status: string;
-  createdAt: string | Date;
+  status: string | null;
+  createdAt: string | Date | null;
 }
 
 interface KoordinatorRisetData {
@@ -55,7 +55,7 @@ export default function KoordinatorRisetView({
           <p className="text-gray-500 text-sm">
             Koordinator Divisi{" "}
             <span className="font-semibold text-orange-600">
-              {user.division.divisionName}
+              {user.division?.divisionName ?? "Belum ditentukan"}
             </span>
           </p>
         </div>
@@ -144,65 +144,70 @@ export default function KoordinatorRisetView({
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {recentUploads.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      {/* Icon based on category */}
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center border",
-                          item.category === "Infografis"
-                            ? "bg-purple-50 border-purple-100 text-purple-600"
-                            : "bg-blue-50 border-blue-100 text-blue-600",
-                        )}
-                      >
-                        {item.category === "Infografis" ? (
-                          <ImageIcon size={20} />
-                        ) : (
-                          <FileText size={20} />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 text-sm line-clamp-1">
-                          {item.title}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] uppercase font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                            {item.category}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            •{" "}
-                            {new Date(item.createdAt).toLocaleDateString(
-                              "id-ID",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              },
-                            )}
-                          </span>
+                {recentUploads.map((item) => {
+                  const uploadDate = item.createdAt
+                    ? new Date(item.createdAt)
+                    : null;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Icon based on category */}
+                        <div
+                          className={cn(
+                            "w-10 h-10 rounded-lg flex items-center justify-center border",
+                            item.category === "Infografis"
+                              ? "bg-purple-50 border-purple-100 text-purple-600"
+                              : "bg-blue-50 border-blue-100 text-blue-600",
+                          )}
+                        >
+                          {item.category === "Infografis" ? (
+                            <ImageIcon size={20} />
+                          ) : (
+                            <FileText size={20} />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 text-sm line-clamp-1">
+                            {item.title}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                              {item.category}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              •{" "}
+                              {uploadDate && !Number.isNaN(uploadDate.getTime())
+                                ? uploadDate.toLocaleDateString("id-ID", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                  })
+                                : "Tanggal tidak tersedia"}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Status Badge */}
-                    <span
-                      className={cn(
-                        "text-[10px] font-bold px-2 py-1 rounded-full uppercase",
-                        item.status === "published"
-                          ? "bg-green-100 text-green-700"
-                          : item.status === "review"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-gray-100 text-gray-600",
-                      )}
-                    >
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
+                      {/* Status Badge */}
+                      <span
+                        className={cn(
+                          "text-[10px] font-bold px-2 py-1 rounded-full uppercase",
+                          item.status === "published"
+                            ? "bg-green-100 text-green-700"
+                            : item.status === "review"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-600",
+                        )}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

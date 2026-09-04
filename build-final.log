@@ -1,0 +1,57 @@
+
+> potikweb@0.1.0 build
+> next build
+
+⚠ `experimental.middlewareClientMaxBodySize` is deprecated. Please use `experimental.proxyClientMaxBodySize` instead in next.config.ts.
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+- Experiments (use with caution):
+  · middlewareClientMaxBodySize: "60mb"
+  · serverActions
+
+  Creating an optimized production build ...
+(node:27723) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 4.5s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/47) ...
+Error occurred prerendering page "/what-we-do/data". Read more: https://nextjs.org/docs/messages/prerender-error
+Error: Failed query: select "id", "section", "key", "value", "type", "label", "description", "sort_order", "updated_at", "updated_by" from "site_config" "siteConfig" where "siteConfig"."section" = $1
+params: wtd_data_feature_2
+    at o.queryWithCache (.next/server/chunks/ssr/_6838bac8._.js:8:41513)
+    at async (.next/server/chunks/ssr/_6838bac8._.js:8:45069)
+    at async r (.next/server/chunks/ssr/app_dashboard_media_cms_19a394f7._.js:1:22988)
+    at async f (.next/server/chunks/ssr/[root-of-the-server]__9a51e1f6._.js:1:429)
+    at async h (.next/server/chunks/ssr/[root-of-the-server]__9a51e1f6._.js:1:2916) {
+  query: 'select "id", "section", "key", "value", "type", "label", "description", "sort_order", "updated_at", "updated_by" from "site_config" "siteConfig" where "siteConfig"."section" = $1',
+  params: [Array],
+  digest: '3691802515',
+  [cause]: error: (EMAXCONNSESSION) max clients reached in session mode - max clients are limited to pool_size: 15
+      at async (.next/server/chunks/ssr/_6838bac8._.js:8:45284)
+      at async o.queryWithCache (.next/server/chunks/ssr/_6838bac8._.js:8:41488)
+      at async (.next/server/chunks/ssr/_6838bac8._.js:8:45069)
+      at async r (.next/server/chunks/ssr/app_dashboard_media_cms_19a394f7._.js:1:22988)
+      at async f (.next/server/chunks/ssr/[root-of-the-server]__9a51e1f6._.js:1:429)
+      at async h (.next/server/chunks/ssr/[root-of-the-server]__9a51e1f6._.js:1:2916) {
+    length: 117,
+    severity: 'FATAL',
+    code: 'XX000',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: undefined,
+    line: undefined,
+    routine: undefined
+  }
+}
+Export encountered an error on /(public)/what-we-do/data/page: /what-we-do/data, exiting the build.
+⨯ Next.js build worker exited with code: 1 and signal: null

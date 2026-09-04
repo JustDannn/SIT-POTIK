@@ -1,0 +1,28 @@
+⚠ `experimental.middlewareClientMaxBodySize` is deprecated. Please use `experimental.proxyClientMaxBodySize` instead in next.config.ts.
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+- Experiments (use with caution):
+  · middlewareClientMaxBodySize: "60mb"
+  · serverActions
+
+  Creating an optimized production build ...
+(node:25473) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 4.2s
+  Running TypeScript ...
+Failed to compile.
+
+./app/dashboard/page.tsx:93:36
+Type error: Type '{ name: string; password: string; image: string | null; id: string; email: string; roleId: number; divisionId: number | null; createdAt: Date | null; status: string | null; role: { id: number; roleName: string; }; division: { ...; } | null; }' is not assignable to type 'KoordinatorRisetUser'.
+  Types of property 'division' are incompatible.
+    Type '{ id: number; divisionName: string; isActive: boolean | null; } | null' is not assignable to type '{ divisionName: string; }'.
+      Type 'null' is not assignable to type '{ divisionName: string; }'.
+
+[0m [90m 91 |[39m
+ [90m 92 |[39m       [36mconst[39m risetData [33m=[39m [36mawait[39m getRisetStats(userProfile[33m.[39mdivisionId)[33m;[39m
+[31m[1m>[22m[39m[90m 93 |[39m       [36mreturn[39m [33m<[39m[33mKoordinatorRisetView[39m user[33m=[39m{userProfile} data[33m=[39m{risetData} [33m/[39m[33m>[39m[33m;[39m
+ [90m    |[39m                                    [31m[1m^[22m[39m
+ [90m 94 |[39m     }
+ [90m 95 |[39m
+ [90m 96 |[39m     [36mif[39m (divisionName[33m.[39mincludes([32m"layanan"[39m) [33m||[39m divisionName[33m.[39mincludes([32m"data"[39m)) {[0m
+Next.js build worker exited with code: 1 and signal: null

@@ -19,7 +19,10 @@ dns.lookup = (hostname: string, options: any, callback: any) => {
 const connectionString = process.env.DATABASE_URL!;
 
 const pool = new Pool({
-  connectionString: connectionString,
+  connectionString,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 export const db = drizzle(pool, { schema });
