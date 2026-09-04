@@ -14,17 +14,17 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 interface KoordinatorRisetUser {
   name: string;
-  division: {
+  division?: {
     divisionName: string;
-  };
+  } | null;
 }
 
 interface RecentUpload {
   id: number;
   title: string;
   category: string;
-  status: string;
-  createdAt: string | Date;
+  status?: string | null;
+  createdAt?: string | Date | null;
 }
 
 interface KoordinatorRisetData {
@@ -55,7 +55,7 @@ export default function KoordinatorRisetView({
           <p className="text-gray-500 text-sm">
             Koordinator Divisi{" "}
             <span className="font-semibold text-orange-600">
-              {user.division.divisionName}
+              {user.division?.divisionName ?? "Riset & Infografis"}
             </span>
           </p>
         </div>
@@ -175,14 +175,16 @@ export default function KoordinatorRisetView({
                           </span>
                           <span className="text-xs text-gray-400">
                             •{" "}
-                            {new Date(item.createdAt).toLocaleDateString(
-                              "id-ID",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              },
-                            )}
+                            {item.createdAt
+                              ? new Date(item.createdAt).toLocaleDateString(
+                                  "id-ID",
+                                  {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                  },
+                                )
+                              : "-"}
                           </span>
                         </div>
                       </div>

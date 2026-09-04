@@ -4,18 +4,9 @@ import dns from "node:dns";
 
 dotenv.config({ path: ".env" });
 
-// Force IPv4 for DNS resolution
-const originalLookup = dns.lookup;
-// @ts-ignore
-dns.lookup = (hostname, options, callback) => {
-  if (typeof options === "function") {
-    callback = options;
-    options = {};
-  }
-  options = { ...(typeof options === "object" ? options : {}), family: 4 };
-  // @ts-ignore
-  return originalLookup(hostname, options, callback);
-};
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is missing");
