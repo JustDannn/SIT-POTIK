@@ -153,7 +153,17 @@ export default async function ProkerDetailPage({ params }: PageProps) {
       })),
     };
 
-    return <ProkerDetailView proker={formattedProker as any} />;
+    const roleName = userProfile.role?.roleName;
+    const canDelete =
+      roleName === "Ketua" ||
+      roleName === "Sekretaris" ||
+      (roleName === "Koordinator" &&
+        (userProfile.id === prokerData.picUserId ||
+          userProfile.divisionId === prokerData.divisionId));
+
+    return (
+      <ProkerDetailView proker={formattedProker as any} canDelete={canDelete} />
+    );
   } catch (error) {
     console.error("Error fetching proker detail:", error);
     notFound();

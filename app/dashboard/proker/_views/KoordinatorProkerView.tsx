@@ -146,7 +146,11 @@ export default function KoordinatorProkerView({
             {uniqueData.map((proker) => (
               <Link
                 key={`${proker.type ?? "proker"}-${proker.id}`}
-                href={`/dashboard/proker/${proker.id}`}
+                href={
+                  proker.type === "program"
+                    ? `/dashboard/events/${proker.id}`
+                    : `/dashboard/proker/${proker.id}`
+                }
                 className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-indigo-300 hover:shadow-md transition-all relative overflow-hidden"
               >
                 <div className="flex justify-between items-start mb-4">

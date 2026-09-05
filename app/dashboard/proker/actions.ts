@@ -9,6 +9,10 @@ import {
   activityLogs,
   programs,
   programParticipants,
+  reports,
+  reportApprovals,
+  lpjs,
+  financeRecords,
 } from "@/db/schema";
 import { desc, eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/session"; // Tambahan buat Auth
@@ -350,5 +354,62 @@ export async function updateProkerStatus(
   } catch (error) {
     console.error("Gagal update status proker:", error);
     return { success: false, error: "Gagal menyimpan perubahan status." };
+  }
+}
+
+export async function deleteProker(prokerId: number) {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const proker = await db.query.prokers.findFirst({
+    where: eq(prokers.id, prokerId),
+    columns: { id: true, picUserId: true, divisionId: true },
+  });
+  if (!proker) return { success: false, error: "Proker tidak ditemukan." };
+
+  const roleName = user.role?.roleName;
+  const canDelete =
+    roleName === "Ketua" ||
+    roleName === "Sekretaris" ||
+    (roleName === "Koordinator" &&
+      (user.id === proker.picUserId || user.divisionId === proker.divisionId));
+
+  if (!canDelete) {
+    return { success: false, error: "Anda tidak berhak menghapus proker ini." };
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      const reportRows = await tx
+        .select({ id: reports.id })
+        .from(reports)
+        .where(eq(reports.prokerId, prokerId));
+
+      for (const report of reportRows) {
+        await tx
+          .delete(reportApprovals)
+          .where(eq(reportApprovals.reportId, report.id));
+      }
+
+      await tx.delete(reports).where(eq(reports.prokerId, prokerId));
+      await tx.delete(lpjs).where(eq(lpjs.prokerId, prokerId));
+      await tx
+        .delete(financeRecords)
+        .where(eq(financeRecords.prokerId, prokerId));
+      await tx
+        .delete(programParticipants)
+        .where(eq(programParticipants.prokerId, prokerId));
+      await tx.delete(tasks).where(eq(tasks.prokerId, prokerId));
+      await tx.delete(activityLogs).where(eq(activityLogs.prokerId, prokerId));
+      await tx.delete(prokers).where(eq(prokers.id, prokerId));
+    });
+
+    revalidatePath("/dashboard/proker");
+    revalidatePath(`/dashboard/proker/${prokerId}`);
+    revalidatePath("/dashboard/overview");
+    return { success: true };
+  } catch (error) {
+    console.error("Gagal menghapus proker:", error);
+    return { success: false, error: "Gagal menghapus proker." };
   }
 }

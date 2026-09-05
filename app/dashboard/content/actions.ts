@@ -234,9 +234,47 @@ export async function updateContentStatus(id: number, status: string) {
 
     // Refresh data di halaman content biar langsung berubah
     revalidatePath("/dashboard/content");
+    revalidatePath("/");
+    revalidatePath("/publications");
+    revalidatePath("/updates");
+    revalidatePath(`/publications/${id}`);
     return { success: true };
   } catch (error) {
     console.error("Gagal update status:", error);
     return { success: false, error: "Gagal update status di database" };
+  }
+}
+
+export async function deleteContent(id: number) {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const content = await db.query.publications.findFirst({
+    where: eq(publications.id, id),
+    columns: { id: true, authorId: true, divisionId: true },
+  });
+  if (!content) return { success: false, error: "Konten tidak ditemukan." };
+
+  const roleName = user.role?.roleName;
+  const canDelete =
+    roleName === "Ketua" ||
+    roleName === "Sekretaris" ||
+    user.id === content.authorId ||
+    (roleName === "Koordinator" && user.divisionId === content.divisionId);
+
+  if (!canDelete) {
+    return { success: false, error: "Anda tidak berhak menghapus konten ini." };
+  }
+
+  try {
+    await db.delete(publications).where(eq(publications.id, id));
+    revalidatePath("/dashboard/content");
+    revalidatePath("/");
+    revalidatePath("/publications");
+    revalidatePath("/updates");
+    return { success: true };
+  } catch (error) {
+    console.error("Gagal menghapus konten:", error);
+    return { success: false, error: "Gagal menghapus konten." };
   }
 }

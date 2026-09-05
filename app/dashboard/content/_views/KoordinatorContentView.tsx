@@ -13,9 +13,10 @@ import {
   Filter,
   ChevronDown, // Tambahan icon buat panah dropdown
   CheckCircle2, // Icon success
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateContentStatus } from "../actions";
+import { deleteContent, updateContentStatus } from "../actions";
 
 interface ContentItem {
   id: number;
@@ -79,6 +80,18 @@ export default function KoordinatorContentView({
       console.error(error);
       alert("Terjadi kesalahan sistem.");
     }
+  };
+
+  const handleDelete = async (itemId: number, title: string) => {
+    if (!window.confirm(`Hapus konten "${title}"?`)) return;
+
+    const result = await deleteContent(itemId);
+    if (!result.success) {
+      alert(result.error || "Gagal menghapus konten.");
+      return;
+    }
+
+    router.refresh();
   };
 
   return (
@@ -253,9 +266,18 @@ export default function KoordinatorContentView({
                   <Link
                     href={`/dashboard/content/${item.id}/edit`}
                     className="p-2 bg-gray-100 hover:bg-orange-100 text-gray-600 hover:text-orange-600 rounded-lg transition-colors"
+                    title="Edit konten"
                   >
                     <Edit2 size={16} />
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id, item.title)}
+                    className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                    title="Hapus konten"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
 

@@ -90,6 +90,9 @@ export async function updatePublication(
       .where(eq(publications.id, id));
 
     revalidatePath("/dashboard/publications");
+    revalidatePath("/");
+    revalidatePath("/publications");
+    revalidatePath("/updates");
     revalidatePath(`/publications/${data.slug}`); // Refresh halaman public juga
     return { success: true };
   } catch (error) {

@@ -14,7 +14,11 @@ import {
   Image as ImageIcon,
   Info,
   Clock,
+  Trash2,
+  Loader2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { deleteProker } from "../actions";
 import { cn } from "@/lib/utils";
 
 // Reuse Event tab components (polished & feature-rich)
@@ -63,8 +67,16 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function ProkerDetailView({ proker }: { proker: ProkerDetail }) {
+export default function ProkerDetailView({
+  proker,
+  canDelete = false,
+}: {
+  proker: ProkerDetail;
+  canDelete?: boolean;
+}) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
   const isProgram = proker.type === "program";
 
   // Build tabs — Impact only for programs
@@ -80,6 +92,27 @@ export default function ProkerDetailView({ proker }: { proker: ProkerDetail }) {
 
   const backHref = isProgram ? "/dashboard/events" : "/dashboard/proker";
   const backLabel = isProgram ? "Kembali ke Events" : "Kembali ke List";
+
+  const handleDelete = async () => {
+    if (
+      !window.confirm(
+        `Hapus proker "${proker.title}"? Data tugas, log, laporan, dan LPJ terkait juga akan dihapus.`,
+      )
+    ) {
+      return;
+    }
+
+    setIsDeleting(true);
+    const result = await deleteProker(proker.id);
+    if (!result.success) {
+      alert(result.error || "Gagal menghapus proker.");
+      setIsDeleting(false);
+      return;
+    }
+
+    router.push("/dashboard/proker");
+    router.refresh();
+  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -110,10 +143,27 @@ export default function ProkerDetailView({ proker }: { proker: ProkerDetail }) {
                   {proker.title}
                 </h1>
 
-                <ProkerStatusDropdown
-                  prokerId={proker.id}
-                  currentStatus={proker.status}
-                />
+                <div className="flex items-center gap-2">
+                  <ProkerStatusDropdown
+                    prokerId={proker.id}
+                    currentStatus={proker.status}
+                  />
+                  {canDelete && !isProgram && (
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      title="Hapus proker"
+                      className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isDeleting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={16} />
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
               {proker.description && (
                 <p className="text-gray-500 max-w-2xl text-sm mt-1">
