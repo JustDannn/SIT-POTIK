@@ -25,6 +25,27 @@
     background-size: 24px 24px;
   }
 }
+
+@layer base {
+  input,
+  textarea,
+  select {
+    color: var(--color-slate-700);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-slate-500);
+    opacity: 1;
+  }
+
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    color: var(--color-slate-600);
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

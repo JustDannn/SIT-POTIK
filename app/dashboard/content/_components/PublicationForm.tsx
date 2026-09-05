@@ -185,7 +185,7 @@ export default function PublicationForm({
               required
               rows={1}
               placeholder="Judul Artikel yang Menarik..."
-              className="w-full text-3xl font-extrabold text-gray-900 placeholder:text-gray-300 border-none outline-none bg-transparent resize-none overflow-hidden leading-tight"
+              className="w-full text-3xl font-extrabold text-gray-900 placeholder:text-slate-500 border-none outline-none bg-transparent resize-none overflow-hidden leading-tight"
               style={{ overflowWrap: "anywhere" }}
               value={formData.title}
               onChange={(e) => {
@@ -278,7 +278,7 @@ export default function PublicationForm({
             {/* Text Area */}
             <textarea
               required
-              className="flex-1 w-full p-6 outline-none border-none resize-none font-serif text-lg text-gray-800 leading-relaxed placeholder:text-gray-300"
+              className="flex-1 w-full p-6 outline-none border-none resize-none font-serif text-lg text-gray-800 leading-relaxed placeholder:text-slate-500"
               placeholder="Mulai menulis ceritamu di sini..."
               value={formData.content}
               onChange={(e) =>

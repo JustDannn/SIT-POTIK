@@ -122,7 +122,7 @@ export default function RegisterPage() {
                       name="fullName"
                       required
                       placeholder="Nama sesuai KTM"
-                      className="block w-full rounded-xl border-0 bg-white/50 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="block w-full rounded-xl border-0 bg-white/50 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                   </div>
                 </div>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
                       type="email"
                       required
                       placeholder="nama@student.telkom..."
-                      className="block w-full rounded-xl border-0 bg-white/50 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="block w-full rounded-xl border-0 bg-white/50 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export default function RegisterPage() {
                       required
                       minLength={6}
                       placeholder="Minimal 6 karakter"
-                      className="block w-full rounded-xl border-0 bg-white/50 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="block w-full rounded-xl border-0 bg-white/50 py-2.5 pl-9 pr-3 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                   </div>
                 </div>

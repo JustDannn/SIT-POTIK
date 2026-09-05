@@ -107,7 +107,7 @@ export default function MinuteForm({
               required
               name="title"
               defaultValue={initialData?.title}
-              className="w-full text-lg px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none placeholder:text-gray-300 font-bold"
+              className="w-full text-lg text-slate-800 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none placeholder:text-slate-500 font-bold"
               placeholder="Contoh: Rapat Evaluasi Triwulan 1"
             />
           </div>

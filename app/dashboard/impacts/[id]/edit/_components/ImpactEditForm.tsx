@@ -114,10 +114,11 @@ export default function ImpactEditForm({ impact }: { impact: Impact }) {
           const formData = new FormData();
           formData.append("file", thumbnailFile);
           formData.append("bucket", "publications");
-          
+
           const result = await uploadFileAction(formData);
-          if (result.error) throw new Error("Gagal upload thumbnail: " + result.error);
-          
+          if (result.error)
+            throw new Error("Gagal upload thumbnail: " + result.error);
+
           if (result.url) {
             thumbnailUrl = result.url;
           }
@@ -132,10 +133,11 @@ export default function ImpactEditForm({ impact }: { impact: Impact }) {
           const formData = new FormData();
           formData.append("file", attachmentFile);
           formData.append("bucket", "publications");
-          
+
           const result = await uploadFileAction(formData);
-          if (result.error) throw new Error("Gagal upload file: " + result.error);
-          
+          if (result.error)
+            throw new Error("Gagal upload file: " + result.error);
+
           if (result.url) {
             fileUrl = result.url;
           }
@@ -222,7 +224,7 @@ export default function ImpactEditForm({ impact }: { impact: Impact }) {
             <input
               required
               placeholder="Judul Impact Story yang Menarik..."
-              className="w-full text-3xl font-extrabold text-gray-900 placeholder:text-gray-300 border-none outline-none bg-transparent"
+              className="w-full text-3xl font-extrabold text-gray-900 placeholder:text-slate-500 border-none outline-none bg-transparent"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />

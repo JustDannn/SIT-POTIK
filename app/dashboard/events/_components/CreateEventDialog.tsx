@@ -176,7 +176,7 @@ export default function CreateEventDialog({
             {/* Title Input */}
             <input
               placeholder="Nama Kegiatan / Event..."
-              className="w-full text-2xl font-bold text-gray-900 placeholder:text-gray-300 border-none outline-none bg-transparent"
+              className="w-full text-2xl font-bold text-gray-900 placeholder:text-slate-500 border-none outline-none bg-transparent"
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })

@@ -108,7 +108,7 @@ export default function Sidebar({ user }: SidebarProps) {
             <input
               type="text"
               placeholder="Search..."
-              className="ml-2 w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
+              className="ml-2 w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-500"
             />
           )}
         </div>

@@ -76,7 +76,7 @@ export default function ImpactFeed({
             <input
               type="text"
               placeholder="Cari event atau kegiatan..."
-              className="pl-10 pr-4 py-3 bg-white/50 border border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-200 w-full md:w-80 transition-all placeholder:text-gray-400 text-gray-800"
+              className="pl-10 pr-4 py-3 bg-white/50 border border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-200 w-full md:w-80 transition-all placeholder:text-slate-500 text-slate-800"
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
