@@ -9,6 +9,7 @@ import {
   designRequestComments,
 } from "@/db/schema";
 import RequestDetailView from "./_components/RequestDetailView";
+import { getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -98,9 +99,23 @@ export default async function DesignRequestDetailPage({ params }: Props) {
     <RequestDetailView
       request={{
         ...request,
+        attachmentUrl: getPublicUrl(
+          STORAGE_BUCKETS.designRequests,
+          request.attachmentUrl,
+        ),
+        resultUrl: getPublicUrl(
+          STORAGE_BUCKETS.designRequests,
+          request.resultUrl,
+        ),
         assignee,
       }}
-      comments={comments}
+      comments={comments.map((comment) => ({
+        ...comment,
+        attachmentUrl: getPublicUrl(
+          STORAGE_BUCKETS.designRequests,
+          comment.attachmentUrl,
+        ),
+      }))}
       currentUser={{
         id: profile.id,
         name: profile.name,

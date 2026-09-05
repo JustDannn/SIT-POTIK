@@ -50,6 +50,7 @@ type CampaignPlatform =
   | "youtube";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/utils/session";
+import { deleteFile, getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage";
 
 export async function getMediaDashboardStats() {
   const now = new Date();
@@ -343,7 +344,7 @@ export async function getMediaAssets(filters?: {
     if (searchCondition) conditions.push(searchCondition);
   }
 
-  return await db.query.mediaAssets.findMany({
+  const rows = await db.query.mediaAssets.findMany({
     where: conditions.length > 0 ? and(...conditions) : undefined,
     orderBy: [desc(mediaAssets.createdAt)],
     with: {
@@ -352,6 +353,11 @@ export async function getMediaAssets(filters?: {
       uploader: true,
     },
   });
+  return rows.map((row) => ({
+    ...row,
+    url: getPublicUrl(STORAGE_BUCKETS.mediaAssets, row.url) || row.url,
+    thumbnailUrl: getPublicUrl(STORAGE_BUCKETS.mediaAssets, row.thumbnailUrl),
+  }));
 }
 
 export async function getMediaFolders() {
@@ -405,7 +411,14 @@ export async function updateMediaAsset(
 }
 
 export async function deleteMediaAsset(id: number) {
+  const asset = await db.query.mediaAssets.findFirst({
+    where: eq(mediaAssets.id, id),
+  });
   await db.delete(mediaAssets).where(eq(mediaAssets.id, id));
+  if (asset)
+    await deleteFile(STORAGE_BUCKETS.mediaAssets, asset.url).catch(
+      () => undefined,
+    );
   revalidatePath("/dashboard/media/repository");
   return { success: true };
 }
@@ -419,11 +432,16 @@ export async function getBrandKits(category?: string) {
       )
     : eq(brandKits.isActive, true);
 
-  return await db.query.brandKits.findMany({
+  const rows = await db.query.brandKits.findMany({
     where: whereClause,
     orderBy: [brandKits.category, desc(brandKits.updatedAt)],
     with: { uploader: true },
   });
+  return rows.map((row) => ({
+    ...row,
+    fileUrl: getPublicUrl(STORAGE_BUCKETS.brandKit, row.fileUrl) || row.fileUrl,
+    thumbnailUrl: getPublicUrl(STORAGE_BUCKETS.brandKit, row.thumbnailUrl),
+  }));
 }
 
 export async function createBrandKit(data: {
@@ -479,11 +497,23 @@ export async function updateBrandKit(
 }
 
 export async function deleteBrandKit(id: number) {
+  const kit = await db.query.brandKits.findFirst({
+    where: eq(brandKits.id, id),
+  });
   // Soft delete
   await db
     .update(brandKits)
     .set({ isActive: false })
     .where(eq(brandKits.id, id));
+  if (kit) {
+    await deleteFile(STORAGE_BUCKETS.brandKit, kit.fileUrl).catch(
+      () => undefined,
+    );
+    if (kit.thumbnailUrl)
+      await deleteFile(STORAGE_BUCKETS.brandKit, kit.thumbnailUrl).catch(
+        () => undefined,
+      );
+  }
   revalidatePath("/dashboard/media/brand-kit");
   return { success: true };
 }
@@ -512,7 +542,7 @@ export async function getCampaigns(filters?: {
     conditions.push(lt(campaigns.scheduledDate, filters.endDate));
   }
 
-  return await db.query.campaigns.findMany({
+  const rows = await db.query.campaigns.findMany({
     where: conditions.length > 0 ? and(...conditions) : undefined,
     orderBy: [desc(campaigns.scheduledDate), desc(campaigns.createdAt)],
     with: {
@@ -521,6 +551,10 @@ export async function getCampaigns(filters?: {
       designRequest: true,
     },
   });
+  return rows.map((row) => ({
+    ...row,
+    assetUrl: getPublicUrl(STORAGE_BUCKETS.mediaAssets, row.assetUrl),
+  }));
 }
 
 export async function getCampaignById(id: number) {
@@ -612,7 +646,14 @@ export async function publishCampaign(id: number, externalLink?: string) {
 }
 
 export async function deleteCampaign(id: number) {
+  const campaign = await db.query.campaigns.findFirst({
+    where: eq(campaigns.id, id),
+  });
   await db.delete(campaigns).where(eq(campaigns.id, id));
+  if (campaign?.assetUrl)
+    await deleteFile(STORAGE_BUCKETS.mediaAssets, campaign.assetUrl).catch(
+      () => undefined,
+    );
   revalidatePath("/dashboard/media/campaigns");
   return { success: true };
 }

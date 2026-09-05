@@ -5,8 +5,12 @@ import { archives, users } from "@/db/schema";
 import { eq, desc, and, like } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/session";
 import { revalidatePath } from "next/cache";
-import { writeFile, unlink } from "fs/promises";
-import path from "path";
+import {
+  deleteFile,
+  getPublicUrl,
+  STORAGE_BUCKETS,
+  uploadFile,
+} from "@/lib/storage";
 
 type ArchiveCategory =
   | "surat_masuk"
@@ -37,10 +41,12 @@ export async function getArchives(query: string = "", category: string = "") {
     .where(and(...filters))
     .orderBy(desc(archives.createdAt));
 
-  return data;
+  return data.map((item) => ({
+    ...item,
+    fileUrl: getPublicUrl(STORAGE_BUCKETS.archives, item.fileUrl),
+  }));
 }
 
-// UPLOAD ACTION (Simpan file ke folder lokal /public/uploads)
 export async function uploadArchive(formData: FormData) {
   const user = await getCurrentUser();
 
@@ -53,8 +59,6 @@ export async function uploadArchive(formData: FormData) {
   const description = formData.get("description") as string;
   const file = formData.get("file") as File;
 
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-
   if (!file || file.size === 0) {
     return {
       success: false,
@@ -62,31 +66,25 @@ export async function uploadArchive(formData: FormData) {
     };
   }
 
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      success: false,
-      error: "Ukuran file maksimal 5 MB",
-    };
-  }
-
+  let uploaded: { path: string } | null = null;
   try {
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
-
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    const filePath = path.join(uploadDir, fileName);
-
-    await writeFile(filePath, buffer);
-
-    const fileUrl = `/uploads/${fileName}`;
+    uploaded = await uploadFile({
+      file,
+      bucket: STORAGE_BUCKETS.archives,
+      prefix: category || "lainnya",
+      maxSize: 5 * 1024 * 1024,
+      allowedMimeTypes: [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ],
+    });
 
     await db.insert(archives).values({
       title,
       category,
       description,
-      fileUrl,
+      fileUrl: uploaded.path,
       uploadedBy: user.id,
     });
 
@@ -94,6 +92,11 @@ export async function uploadArchive(formData: FormData) {
 
     return { success: true };
   } catch (error: unknown) {
+    if (uploaded) {
+      await deleteFile(STORAGE_BUCKETS.archives, uploaded.path).catch(
+        () => undefined,
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Gagal upload dokumen";
 
@@ -112,18 +115,12 @@ export async function deleteArchive(id: number, fileUrl: string) {
   if (!user) return { success: false, error: "Unauthorized" };
 
   try {
-    // 1. Hapus file fisik dari folder public/uploads kalau ada
-    if (fileUrl && fileUrl.startsWith("/uploads/")) {
-      const filePath = path.join(process.cwd(), "public", fileUrl);
-      try {
-        await unlink(filePath);
-      } catch (e: unknown) {
-        console.warn("File fisik tidak ditemukan atau sudah terhapus:", e);
-      }
-    }
-
-    // 2. Hapus data dari database
+    const archive = await db.query.archives.findFirst({
+      where: eq(archives.id, id),
+      columns: { fileUrl: true },
+    });
     await db.delete(archives).where(eq(archives.id, id));
+    await deleteFile(STORAGE_BUCKETS.archives, archive?.fileUrl || fileUrl);
 
     revalidatePath("/dashboard/archives");
     return { success: true };

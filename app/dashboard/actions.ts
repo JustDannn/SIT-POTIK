@@ -1,8 +1,5 @@
 "use server";
 
-import { writeFile } from "fs/promises";
-import path from "path";
-import fs from "fs";
 import { db } from "@/db";
 import {
   prokers,
@@ -37,6 +34,13 @@ import {
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/utils/session";
+import {
+  deleteFile,
+  getPublicUrl,
+  STORAGE_RULES,
+  uploadFile,
+  type StorageBucket,
+} from "@/lib/storage";
 
 export async function getDashboardStats() {
   const [
@@ -867,6 +871,9 @@ export async function getMediaDashboardData() {
 }
 
 export async function uploadFileAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Unauthorized" };
+
   const file = formData.get("file") as File | null;
   const bucket = formData.get("bucket") as string | null;
 
@@ -876,70 +883,13 @@ export async function uploadFileAction(formData: FormData) {
     };
   }
 
-  // ALLOWED FILE TYPES
-  const ALLOWED_FILES: Record<
-    string,
-    {
-      extensions: string[];
-      mimeTypes: string[];
-      maxSize: number;
-    }
-  > = {
-    "brand-kit": {
-      extensions: [
-        "png",
-        "jpg",
-        "jpeg",
-        "svg",
-        "webp",
-        "gif",
-        "pdf",
-        "ai",
-        "eps",
-        "ttf",
-        "otf",
-        "woff",
-        "woff2",
-      ],
-
-      mimeTypes: [
-        "image/png",
-        "image/jpeg",
-        "image/svg+xml",
-        "image/webp",
-        "image/gif",
-        "application/pdf",
-        "application/postscript",
-        "application/vnd.adobe.illustrator",
-        "font/ttf",
-        "font/otf",
-        "font/woff",
-        "font/woff2",
-        "application/font-sfnt",
-        "application/x-font-ttf",
-        "application/x-font-opentype",
-      ],
-
-      maxSize: 5 * 1024 * 1024, // 5 MB
-    },
-
-    campaigns: {
-      extensions: ["png", "jpg", "jpeg", "webp", "gif", "mp4", "mov"],
-
-      mimeTypes: [
-        "image/png",
-        "image/jpeg",
-        "image/webp",
-        "image/gif",
-        "video/mp4",
-        "video/quicktime",
-      ],
-
-      maxSize: 50 * 1024 * 1024, // 50 MB
-    },
+  const bucketAliases: Record<string, StorageBucket> = {
+    campaigns: "media-assets",
+    cms: "media-assets",
+    "request-attachments": "design_requests",
   };
-
-  const config = ALLOWED_FILES[bucket];
+  const storageBucket = bucketAliases[bucket] || bucket;
+  const config = STORAGE_RULES[storageBucket as StorageBucket];
 
   if (!config) {
     return {
@@ -947,60 +897,12 @@ export async function uploadFileAction(formData: FormData) {
     };
   }
 
-  if (file.size > config.maxSize) {
-    return {
-      error: `Ukuran file maksimal adalah ${
-        config.maxSize / (1024 * 1024)
-      } MB.`,
-    };
-  }
-
-  // VALIDATE EXTENSION
-
-  const extension = file.name.split(".").pop()?.toLowerCase();
-
-  if (!extension || !config.extensions.includes(extension)) {
-    return {
-      error: `Tipe file .${extension || "unknown"} tidak diizinkan.`,
-    };
-  }
-
-  // VALIDATE MIME TYPE
-
-  if (!config.mimeTypes.includes(file.type)) {
-    return {
-      error: `Format file ${file.type || "unknown"} tidak diizinkan.`,
-    };
-  }
-
   try {
-    // READ FILE
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // SANITIZE FILENAME
-
-    const sanitizedFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "");
-
-    const fileName = `${Date.now()}-${sanitizedFilename}`;
-
-    // CREATE UPLOAD DIRECTORY
-
-    const uploadDir = path.join(process.cwd(), "public", "uploads", bucket);
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, {
-        recursive: true,
-      });
-    }
-
-    const filepath = path.join(uploadDir, fileName);
-
-    await writeFile(filepath, buffer);
-
+    const uploaded = await uploadFile({ file, ...config });
     return {
-      url: `/uploads/${bucket}/${fileName}`,
+      path: uploaded.path,
+      url: uploaded.path,
+      publicUrl: getPublicUrl(uploaded.bucket, uploaded.path),
     };
   } catch (error) {
     console.error("Upload error:", error);
@@ -1008,5 +910,39 @@ export async function uploadFileAction(formData: FormData) {
     return {
       error: "Failed to upload file.",
     };
+  }
+}
+
+export async function uploadAvatar(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const file = formData.get("file") as File | null;
+  if (!file) return { success: false, error: "File wajib diupload." };
+
+  let uploaded: { bucket: StorageBucket; path: string } | null = null;
+  try {
+    const oldPath = user.image;
+    uploaded = await uploadFile({
+      file,
+      ...STORAGE_RULES.avatars,
+      prefix: `users/${user.id}`,
+    });
+    await db
+      .update(users)
+      .set({ image: uploaded.path })
+      .where(eq(users.id, user.id));
+    if (oldPath) await deleteFile("avatars", oldPath).catch(() => undefined);
+    return {
+      success: true,
+      path: uploaded.path,
+      url: getPublicUrl(uploaded.bucket, uploaded.path),
+    };
+  } catch (error) {
+    if (uploaded) {
+      await deleteFile(uploaded.bucket, uploaded.path).catch(() => undefined);
+    }
+    console.error("Avatar upload failed:", error);
+    return { success: false, error: "Gagal mengupload avatar." };
   }
 }

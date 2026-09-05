@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { publications, users } from "@/db/schema";
 import { eq, and, desc, ne, inArray } from "drizzle-orm";
 import PublicationFeed from "./PublicationFeed";
+import { getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage";
 
 export const revalidate = 60;
 
@@ -49,6 +50,8 @@ export default async function PublicPublicationsPage() {
 
   const data = rawData.map((item) => ({
     ...item,
+    thumbnailUrl: getPublicUrl(STORAGE_BUCKETS.publications, item.thumbnailUrl),
+    fileUrl: getPublicUrl(STORAGE_BUCKETS.publications, item.fileUrl),
     author: item.author && item.author.id ? item.author : null,
   }));
 

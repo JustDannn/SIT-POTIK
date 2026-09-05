@@ -3,9 +3,10 @@
 import { db } from "@/db";
 import { publications } from "@/db/schema";
 import { eq, desc, and, ne } from "drizzle-orm";
+import { getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage";
 
 export async function getPublishedContent() {
-  return await db.query.publications.findMany({
+  const rows = await db.query.publications.findMany({
     where: and(
       eq(publications.status, "published"),
       ne(publications.category, "Impact"),
@@ -15,6 +16,11 @@ export async function getPublishedContent() {
       author: true,
     },
   });
+  return rows.map((row) => ({
+    ...row,
+    thumbnailUrl: getPublicUrl(STORAGE_BUCKETS.publications, row.thumbnailUrl),
+    fileUrl: getPublicUrl(STORAGE_BUCKETS.publications, row.fileUrl),
+  }));
 }
 
 export async function getPublicationBySlug(slug: string) {
@@ -28,5 +34,14 @@ export async function getPublicationBySlug(slug: string) {
     },
   });
 
-  return result;
+  return result
+    ? {
+        ...result,
+        thumbnailUrl: getPublicUrl(
+          STORAGE_BUCKETS.publications,
+          result.thumbnailUrl,
+        ),
+        fileUrl: getPublicUrl(STORAGE_BUCKETS.publications, result.fileUrl),
+      }
+    : result;
 }

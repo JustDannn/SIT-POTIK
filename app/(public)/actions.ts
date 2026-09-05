@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { publications, programs, divisions, users } from "@/db/schema";
 import { eq, desc, ne } from "drizzle-orm";
+import { getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage";
 
 export async function getLandingPageData() {
   // All published publications — use explicit select/join to avoid lateral-join issues
@@ -52,8 +53,8 @@ export async function getLandingPageData() {
       title: p.title,
       slug: p.slug,
       excerpt: p.excerpt,
-      thumbnailUrl: p.thumbnailUrl,
-      fileUrl: p.fileUrl,
+      thumbnailUrl: getPublicUrl(STORAGE_BUCKETS.publications, p.thumbnailUrl),
+      fileUrl: getPublicUrl(STORAGE_BUCKETS.publications, p.fileUrl),
       category: p.category,
       publishedAt: p.publishedAt?.toISOString() ?? null,
       author: p.authorName

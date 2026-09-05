@@ -7,6 +7,7 @@ import Link from "next/link";
 import { getCampaigns } from "../actions";
 import CampaignCalendar from "../_components/CampaignCalendar";
 import { ArrowLeft, Calendar } from "lucide-react";
+import { getPublicUrl, STORAGE_BUCKETS } from "@/lib/storage";
 
 export default async function CampaignsPage() {
   const user = await getCurrentUser();
@@ -40,7 +41,7 @@ export default async function CampaignsPage() {
     scheduledDate: c.scheduledDate,
     publishedDate: c.publishedDate,
     caption: c.caption,
-    assetUrl: c.assetUrl,
+    assetUrl: getPublicUrl(STORAGE_BUCKETS.mediaAssets, c.assetUrl),
     pic: c.pic ? { name: c.pic.name } : null,
   }));
 

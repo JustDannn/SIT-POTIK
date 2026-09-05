@@ -5,9 +5,8 @@ import { publications } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { getCurrentUser } from "@/utils/session";
+import { deleteFile, STORAGE_BUCKETS, uploadFile } from "@/lib/storage";
 
 export async function getPublications(divisionId: number) {
   return await db.query.publications.findMany({
@@ -41,6 +40,9 @@ export async function createPublication(data: {
   divisionId: number;
   authorId: string;
 }) {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   try {
     await db.insert(publications).values({
       ...data,
@@ -74,6 +76,9 @@ export async function updatePublication(
     status: string;
   },
 ) {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   try {
     await db
       .update(publications)
@@ -95,34 +100,29 @@ export async function updatePublication(
 
 // SERVER ACTION: Upload Thumbnail
 export async function uploadThumbnail(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  let uploaded: { path: string } | null = null;
   try {
     const file = formData.get("file") as File;
     if (!file) {
       return { success: false, error: "Tidak ada file yang diunggah" };
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Buat direktori jika belum ada
-    const uploadDir = join(process.cwd(), "public", "uploads", "thumbnails");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    // Generate nama file unik
-    const timestamp = Date.now();
-    const ext = file.name.split(".").pop();
-    const fileName = `thumb-${timestamp}.${ext}`;
-    const filePath = join(uploadDir, fileName);
-
-    // Simpan file
-    await writeFile(filePath, buffer);
-
-    // Return public URL
-    const publicUrl = `/uploads/thumbnails/${fileName}`;
-    return { success: true, url: publicUrl };
+    uploaded = await uploadFile({
+      file,
+      bucket: STORAGE_BUCKETS.publications,
+      prefix: "thumbnails",
+      maxSize: 10 * 1024 * 1024,
+      allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+    });
+    return { success: true, url: uploaded.path };
   } catch (error) {
+    if (uploaded)
+      await deleteFile(STORAGE_BUCKETS.publications, uploaded.path).catch(
+        () => undefined,
+      );
     console.error("Upload Thumbnail Error:", error);
     return { success: false, error: "Gagal upload thumbnail" };
   }
@@ -130,6 +130,10 @@ export async function uploadThumbnail(formData: FormData) {
 
 // SERVER ACTION: Upload Document (PDF/DOC)
 export async function uploadDocument(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  let uploaded: { path: string } | null = null;
   try {
     const file = formData.get("file") as File;
     if (!file) {
@@ -149,28 +153,23 @@ export async function uploadDocument(formData: FormData) {
       };
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Buat direktori jika belum ada
-    const uploadDir = join(process.cwd(), "public", "uploads", "documents");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    // Generate nama file unik
-    const timestamp = Date.now();
-    const ext = file.name.split(".").pop();
-    const fileName = `doc-${timestamp}.${ext}`;
-    const filePath = join(uploadDir, fileName);
-
-    // Simpan file
-    await writeFile(filePath, buffer);
-
-    // Return public URL
-    const publicUrl = `/uploads/documents/${fileName}`;
-    return { success: true, url: publicUrl };
+    uploaded = await uploadFile({
+      file,
+      bucket: STORAGE_BUCKETS.documents,
+      prefix: "publications",
+      maxSize: 10 * 1024 * 1024,
+      allowedMimeTypes: [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ],
+    });
+    return { success: true, url: uploaded.path };
   } catch (error) {
+    if (uploaded)
+      await deleteFile(STORAGE_BUCKETS.documents, uploaded.path).catch(
+        () => undefined,
+      );
     console.error("Upload Document Error:", error);
     return { success: false, error: "Gagal upload dokumen" };
   }
