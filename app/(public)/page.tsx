@@ -1,8 +1,8 @@
 import { getLandingPageData } from "./actions";
-import { getCMSSection } from "../dashboard/media/cms/actions";
+import { getCMSSection } from "../dashboard/media/cms/queries";
 import LandingContent from "./LandingContent";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [data, hero, pillars, pubSection, eventsSection, cta] =

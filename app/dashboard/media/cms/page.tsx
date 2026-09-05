@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/utils/session";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getPageContent, getAvailablePages } from "./actions";
+import { getPageContent, getAvailablePages } from "./queries";
 import VisualPageEditor from "./VisualPageEditor";
 
 interface CMSPageProps {

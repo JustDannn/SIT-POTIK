@@ -136,7 +136,9 @@ export async function updateSiteConfig(id: number, value: string) {
     })
     .where(eq(siteConfig.id, id));
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
+  revalidatePath("/meet");
+  revalidatePath("/what-we-do", "layout");
   revalidatePath("/dashboard/media/cms");
   return { success: true };
 }

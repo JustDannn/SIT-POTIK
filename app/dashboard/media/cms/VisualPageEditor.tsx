@@ -202,14 +202,15 @@ export default function VisualPageEditor({
 
     startTransition(async () => {
       try {
-        await saveCMSFields(allFields);
-        // Mark all as saved
+        const result = await saveCMSFields(allFields);
+        if (!result?.success) {
+          throw new Error(result?.error || "Gagal menyimpan");
+        }
         const savedKeys = new Set(
           allFields.map((f) => `${f.section}:${f.key}`),
         );
         setSavedFields(savedKeys);
         setEditedValues({});
-        // Refresh iframe
         setIframeKey((k) => k + 1);
         router.refresh();
       } catch (err) {
@@ -563,7 +564,9 @@ export default function VisualPageEditor({
               <iframe
                 key={iframeKey}
                 ref={iframeRef}
-                src={page.previewUrl}
+                src={`${page.previewUrl}${
+                  page.previewUrl.includes("?") ? "&" : "?"
+                }cms=${iframeKey}`}
                 className="w-full h-full border-0"
                 title="Page Preview"
               />

@@ -1,4 +1,4 @@
-import { getCMSSection } from "@/app/dashboard/media/cms/actions";
+import { getCMSSection } from "@/app/dashboard/media/cms/queries";
 
 // Helper to build DivisionContent props from CMS sections
 export async function getDivisionCMS(divisionPrefix: string) {

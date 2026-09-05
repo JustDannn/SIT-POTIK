@@ -1,6 +1,8 @@
 import { getTeamMembers } from "./actions";
-import { getCMSSection } from "@/app/dashboard/media/cms/actions";
+import { getCMSSection } from "@/app/dashboard/media/cms/queries";
 import MeetPageClient from "./MeetPageClient";
+
+export const dynamic = "force-dynamic";
 
 export default async function MeetPage() {
   const [team, heroData, missionData] = await Promise.all([
